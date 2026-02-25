@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# fabrix-web
 
-## Getting Started
+User-facing web application for the [Fabrix](https://fabrix.tn) distributed 3D printing platform.
 
-First, run the development server:
+Built with **Next.js  (App Router)** · **TypeScript** · **Tailwind CSS** · **shadcn/ui**
+
+---
+
+## What this is
+
+This is the frontend of the Fabrix platform. Users come here to:
+
+- Register and log in
+- Upload STL files and configure print options
+- See available printers and estimated pricing
+- Pay and confirm their print job
+- Track their job in real time (progress, ETA, status)
+
+It communicates with **Fabrix Central** (`fabrix-central`) via REST API and WebSocket.
+
+---
+
+## What is already set up
+
+- Next.js  with App Router and TypeScript
+- Tailwind CSS with dark theme (cyan accent, monospace font)
+- shadcn/ui component library initialized and configured
+- All dependencies installed (see below)
+
+---
+
+## Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `next` | Framework |
+| `typescript` | Language |
+| `tailwindcss` | Styling |
+| `shadcn/ui` | UI component library |
+| `lucide-react` | Icons |
+| `@tanstack/react-query` | Data fetching & caching |
+| `axios` | HTTP client for Fabrix Central API |
+| `react-hook-form` | Form state management |
+| `zod` + `@hookform/resolvers` | Form validation |
+| `socket.io-client` | WebSocket connection for live job updates |
+| `jose` | JWT decoding and verification |
+| `js-cookie` | Cookie storage for auth token |
+| `three` + `@react-three/fiber` + `@react-three/drei` | STL file preview (3D viewer) |
+| `date-fns` | Date formatting |
+| `clsx` + `tailwind-merge` | Conditional class utilities |
+
+---
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.local.example .env.local
+# Fill in your values
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App runs at `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+```env
+NEXT_PUBLIC_API_URL=http://localhost:4000   
+# Fabrix Central base URL
+NEXT_PUBLIC_WS_URL=ws://localhost:4000      
+# Fabrix Central WebSocket URL
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture
 
-## Deploy on Vercel
+```
+fabrix-web (this repo)
+      │
+      │  REST (axios)
+      │  WebSocket
+      ▼
+fabrix-central (NestJS API)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
