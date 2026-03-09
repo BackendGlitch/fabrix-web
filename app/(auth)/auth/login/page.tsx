@@ -1,40 +1,56 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
-import toast from 'react-hot-toast';                                        
+import { useEffect, useState } from 'react';
+import { signIn, useSession } from 'next-auth/react';
+import toast from 'react-hot-toast';
+import { ROUTES } from '@/lib/routes';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { status } = useSession();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace(ROUTES.dashboard);
+    }
+  }, [status, router]);
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormData((previous) => ({
+      ...previous,
       [name]: value,
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setLoading(true);
 
-    try {
-      await login(formData.email, formData.password);
-      toast.success('Login successful!');
-      router.push('/dashboard');
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
+    const result = await signIn('credentials', {
+      email: formData.email,
+      password: formData.password,
+      redirect: false,
+      redirectTo: ROUTES.dashboard,
+    });
+
+    if (result?.error) {
+      toast.error('Invalid email or password');
       setLoading(false);
+      return;
     }
+
+    toast.success('Login successful');
+    router.push(ROUTES.dashboard);
+    router.refresh();
+    setLoading(false);
   };
 
   return (
@@ -89,10 +105,10 @@ export default function LoginPage() {
         </form>
 
         <p className="mt-2 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <a href="/auth/register" className="font-medium text-blue-600 hover:text-blue-500">
+          Don&apos;t have an account?{' '}
+          <Link href={ROUTES.auth.register} className="font-medium text-blue-600 hover:text-blue-500">
             Register here
-          </a>
+          </Link>
         </p>
       </div>
     </div>
