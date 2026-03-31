@@ -7,6 +7,7 @@ declare module 'next-auth' {
       id: string;
       role: UserRole;
     };
+    accessToken?: string;
     error?: 'RefreshAccessTokenError';
   }
 

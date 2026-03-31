@@ -151,6 +151,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       session.error = token.error;
+      session.accessToken = typeof token.accessToken === 'string' ? token.accessToken : undefined;
       return session;
     },
   },

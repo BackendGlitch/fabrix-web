@@ -9,9 +9,12 @@ export const ROUTES = {
     login: '/auth/login' as Route,
     register: '/auth/register' as Route,
   },
+  /** Deep link from agent `login_url` (Central AGENT_LOGIN_BASE_URL) */
+  agentPairingCallback: '/agent/auth' as Route,
   dashboardAreas: {
     admin: '/dashboard/admin' as Route,
     owner: '/dashboard/owner' as Route,
+    ownerAgents: '/dashboard/owner/agents' as Route,
     customer: '/dashboard/customer' as Route,
   },
   api: {

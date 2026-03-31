@@ -61,6 +61,14 @@ async function DashboardContent() {
                 {ROUTES.status}
               </Link>
             </p>
+            {session.user.role === 'OWNER' ? (
+              <p className="mt-2 text-sm text-blue-900">
+                Agent pairing:{' '}
+                <Link href={ROUTES.dashboardAreas.ownerAgents} className="font-medium underline">
+                  {ROUTES.dashboardAreas.ownerAgents}
+                </Link>
+              </p>
+            ) : null}
           </div>
         </div>
       </main>
