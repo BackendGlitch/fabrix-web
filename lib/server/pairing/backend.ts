@@ -1,15 +1,7 @@
 import 'server-only';
 
 import { auth } from '@/auth';
-
-interface AgentDevice {
-  id: string;
-  nodeId: string;
-  displayName: string;
-  status: 'active' | 'revoked';
-  lastSeenAt: string | null;
-  createdAt: string;
-}
+import type { OwnerAgentStatus } from '@/lib/types/agent-status';
 
 function apiBaseUrl(): string {
   const base = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
@@ -72,13 +64,13 @@ export async function ownerApprovePairingCode(code: string): Promise<void> {
   }
 }
 
-export async function ownerListAgents(): Promise<AgentDevice[]> {
+export async function ownerListAgents(): Promise<OwnerAgentStatus[]> {
   const response = await ownerFetch('/agent/pair/owner/agents');
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     throw new Error(pairingErrorMessage(response.status, payload ?? {}));
   }
-  return payload as AgentDevice[];
+  return payload as OwnerAgentStatus[];
 }
 
 export async function ownerRevokeAgent(agentId: string): Promise<void> {

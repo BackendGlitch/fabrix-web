@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { LogoutButton } from '@/components/auth/logout-button';
+import { AgentLiveStatusBoard } from '@/components/owner/agent-live-status-board';
 import { requireAuth } from '@/lib/server/auth/require-auth';
 import { ROUTES } from '@/lib/routes';
 import {
@@ -117,8 +118,8 @@ async function OwnerAgentsContent({
   const revokedAgents = agents.filter((a) => a.status === 'revoked');
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-10">
-      <section className="mx-auto max-w-4xl rounded-lg border bg-white p-6 shadow-sm">
+    <main className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 px-4 py-10">
+      <section className="mx-auto max-w-5xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Agent Pairing</h1>
@@ -183,6 +184,8 @@ async function OwnerAgentsContent({
           </button>
         </form>
 
+        <AgentLiveStatusBoard initialAgents={agents} />
+
         <div className="mt-8 space-y-3">
           <h2 className="text-sm font-semibold text-gray-800">Active devices</h2>
           {!listError && activeAgents.length === 0 ? (
@@ -198,6 +201,7 @@ async function OwnerAgentsContent({
                   <div>
                     <p className="text-sm font-semibold text-gray-900">{agent.displayName}</p>
                     <p className="text-xs text-gray-600">Node: {agent.nodeId}</p>
+                    <p className="text-xs text-gray-600">Runtime: {agent.runtimeStatus ?? 'offline'}</p>
                     <p className="text-xs text-gray-600">
                       Last seen:{' '}
                       {agent.lastSeenAt ? new Date(agent.lastSeenAt).toLocaleString() : 'Never'}

@@ -20,5 +20,6 @@ export const ROUTES = {
   api: {
     authRegister: '/api/auth/register',
     revalidatePublicHealth: '/api/revalidate/public-health',
+    ownerAgentStatus: '/api/owner/agents/status',
   },
 } as const;
