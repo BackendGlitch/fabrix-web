@@ -1,0 +1,161 @@
+import axios, { AxiosError } from 'axios';
+import { getSession } from 'next-auth/react';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+// Helper function to get and attach token
+async function getAuthConfig() {
+  const session = await getSession();
+  return {
+    headers: {
+      Authorization: session?.accessToken ? `Bearer ${session.accessToken}` : '',
+    },
+  };
+}
+
+// Error interceptor for debugging
+apiClient.interceptors.response.use(
+  (response) => {
+    console.log('[API] Response received:', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data,
+    });
+    return response;
+  },
+  (error: AxiosError) => {
+    console.error('[API] Error details:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.message,
+      response: error.response?.data,
+      requestData: error.config?.data,
+    });
+    
+    if (error.response?.status === 401) {
+      console.error('[API] 401 Unauthorized - Token may be invalid');
+    } else if (error.response?.status === 400) {
+      console.error('[API] 400 Bad Request - Check your request data');
+    } else if (error.response?.status === 500) {
+      console.error('[API] 500 Server error');
+    }
+    return Promise.reject(error);
+  }
+);
+
+export interface PrinterOption {
+  id: string;
+  nodeId: string;
+  displayName: string;
+  status: 'online' | 'offline';
+  activityState: 'idle' | 'working' | 'offline';
+  lastHeartbeatAt: string | null;
+  options?: Record<string, unknown>;
+}
+
+export interface AvailablePrinters {
+  printers: PrinterOption[];
+  count: number;
+}
+
+export interface JobFile {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: string;
+  uploadedAt: string;
+}
+
+export interface UploadSTLResponse {
+  file: JobFile;
+  message: string;
+}
+
+export interface CreateJobRequest {
+  fileId: string;
+  name: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface JobDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  status: string;
+  fileId: string;
+  customerId: string;
+  printerId: string | null;
+  file: JobFile;
+  metadata: Record<string, unknown> | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Fetch available printers
+ */
+export async function fetchAvailablePrinters(): Promise<AvailablePrinters> {
+  const config = await getAuthConfig();
+  const response = await apiClient.get<AvailablePrinters>('/customer/printers', config);
+  return response.data;
+}
+
+/**
+ * Upload an STL file
+ */
+export async function uploadSTL(file: File): Promise<UploadSTLResponse> {
+  const config = await getAuthConfig();
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await apiClient.post<UploadSTLResponse>('/customer/jobs/upload', formData, {
+    ...config,
+    headers: {
+      ...config.headers,
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+}
+
+/**
+ * Create a new job
+ */
+export async function createJob(request: CreateJobRequest): Promise<JobDetail> {
+  console.log('[API createJob] Input request:', JSON.stringify(request));
+  const config = await getAuthConfig();
+  console.log('[API createJob] Auth config:', config);
+  console.log('[API createJob] Full request data before send:', JSON.stringify(request));
+  
+  const response = await apiClient.post<JobDetail>('/customer/jobs', request, config);
+  console.log('[API createJob] Response:', response.data);
+  return response.data;
+}
+
+/**
+ * Get job details
+ */
+export async function getJobDetail(jobId: string): Promise<JobDetail> {
+  const config = await getAuthConfig();
+  const response = await apiClient.get<JobDetail>(`/customer/jobs/${jobId}`, config);
+  return response.data;
+}
+
+/**
+ * List customer's jobs
+ */
+export async function listCustomerJobs(): Promise<{ jobs: JobDetail[]; count: number }> {
+  const config = await getAuthConfig();
+  const response = await apiClient.get<{ jobs: JobDetail[]; count: number }>('/customer/jobs/me', config);
+  return response.data;
+}
+
+export default apiClient;

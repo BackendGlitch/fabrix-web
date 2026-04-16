@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { LogoutButton } from '@/components/auth/logout-button';
 import { ROUTES } from '@/lib/routes';
 import { requireAuth } from '@/lib/server/auth/require-auth';
+import { Home, Users, Briefcase, BarChart3 } from 'lucide-react';
 
 const roleLabels: Record<string, string> = {
   OWNER: 'Property Owner',
@@ -13,63 +14,186 @@ const roleLabels: Record<string, string> = {
 function DashboardFallback() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600">Loading dashboard...</p>
+      <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <p className="text-gray-600">Loading...</p>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
 
+interface NavLink {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+  roles: string[];
+}
+
+const navLinks: NavLink[] = [
+  {
+    label: 'Dashboard',
+    href: ROUTES.dashboard,
+    icon: <Home className="w-5 h-5" />,
+    roles: ['OWNER', 'CUSTOMER', 'ADMIN'],
+  },
+  {
+    label: 'My Jobs',
+    href: ROUTES.dashboardAreas.customerJobs,
+    icon: <Briefcase className="w-5 h-5" />,
+    roles: ['CUSTOMER'],
+  },
+  {
+    label: 'Agents',
+    href: ROUTES.dashboardAreas.ownerAgents,
+    icon: <Users className="w-5 h-5" />,
+    roles: ['OWNER'],
+  },
+  {
+    label: 'System Health',
+    href: ROUTES.status,
+    icon: <BarChart3 className="w-5 h-5" />,
+    roles: ['OWNER', 'ADMIN'],
+  },
+];
+
 async function DashboardContent() {
   const session = await requireAuth();
-
   const roleLabel = roleLabels[session.user.role] ?? session.user.role;
+  const visibleNavLinks = navLinks.filter((link) => link.roles.includes(session.user.role));
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Fabrix</h1>
-          <LogoutButton />
+      {/* Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center gap-8">
+              <h1 className="text-2xl font-bold text-gray-900">Fabrix</h1>
+              <nav className="hidden md:flex gap-1">
+                {visibleNavLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="flex items-center gap-2 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors text-sm font-medium"
+                  >
+                    {link.icon}
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-900">{session.user.name}</p>
+                <p className="text-xs text-gray-500">{roleLabel}</p>
+              </div>
+              <LogoutButton />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Navigation */}
+      <nav className="md:hidden bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-2 py-2 overflow-x-auto">
+          {visibleNavLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 whitespace-nowrap text-sm"
+            >
+              {link.icon}
+              {link.label}
+            </Link>
+          ))}
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Welcome, {session.user.name}!
-          </h2>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome, {session.user.name}!</h2>
+          <p className="text-gray-600">Here's your Fabrix dashboard</p>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-            <div className="bg-gray-100 p-4 rounded-lg">
-              <p className="text-sm text-gray-600">Email</p>
-              <p className="text-lg font-semibold text-gray-900">{session.user.email}</p>
+        {/* User Info Card */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Email Address</p>
+              <p className="font-medium text-gray-900">{session.user.email}</p>
             </div>
-
-            <div className="bg-gray-100 p-4 rounded-lg">
-              <p className="text-sm text-gray-600">Role</p>
-              <p className="text-lg font-semibold text-gray-900">{roleLabel}</p>
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Role</p>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  {roleLabel}
+                </span>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Account ID</p>
+              <p className="font-mono text-sm text-gray-900">{session.user.id.substring(0, 8)}...</p>
             </div>
           </div>
+        </div>
 
-          <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="mt-2 text-sm text-blue-900">
-              Cached health example:{' '}
-              <Link href={ROUTES.status} className="font-medium underline">
-                {ROUTES.status}
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {session.user.role === 'CUSTOMER' && (
+            <Link
+              href={ROUTES.dashboardAreas.customerJobs}
+              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow hover:border-blue-400 border"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <Briefcase className="w-6 h-6 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">My Jobs</h3>
+              </div>
+              <p className="text-sm text-gray-600">Manage your 3D printing orders and track progress</p>
+            </Link>
+          )}
+
+          {session.user.role === 'OWNER' && (
+            <>
+              <Link
+                href={ROUTES.dashboardAreas.ownerAgents}
+                className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow hover:border-blue-400 border"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <Users className="w-6 h-6 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Agents</h3>
+                </div>
+                <p className="text-sm text-gray-600">Manage and pair your 3D printer agents</p>
               </Link>
-            </p>
-            {session.user.role === 'OWNER' ? (
-              <p className="mt-2 text-sm text-blue-900">
-                Agent pairing:{' '}
-                <Link href={ROUTES.dashboardAreas.ownerAgents} className="font-medium underline">
-                  {ROUTES.dashboardAreas.ownerAgents}
-                </Link>
-              </p>
-            ) : null}
-          </div>
+
+              <Link
+                href={ROUTES.status}
+                className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow hover:border-blue-400 border"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <BarChart3 className="w-6 h-6 text-green-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">System Health</h3>
+                </div>
+                <p className="text-sm text-gray-600">Check system status and health metrics</p>
+              </Link>
+            </>
+          )}
+
+          {session.user.role === 'ADMIN' && (
+            <Link
+              href={ROUTES.status}
+              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow hover:border-blue-400 border"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <BarChart3 className="w-6 h-6 text-purple-600" />
+                <h3 className="text-lg font-semibold text-gray-900">System Health</h3>
+              </div>
+              <p className="text-sm text-gray-600">Monitor all system metrics and logs</p>
+            </Link>
+          )}
         </div>
       </main>
     </div>
