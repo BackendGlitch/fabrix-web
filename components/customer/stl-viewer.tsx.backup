@@ -196,11 +196,10 @@ export function STLViewer({
         cameraRef.current = camera;
         meshRef.current = mesh;
 
-        // Camera state
+        // Zoom state
         let zoomDistance = 120;
-        const minZoom = 30;
-        const maxZoom = 500;
-        let targetZoom = zoomDistance;
+        const minZoom = 50;
+        const maxZoom = 300;
 
         // Rotation state
         let isRotating = false;
@@ -209,103 +208,49 @@ export function STLViewer({
         let prevX = 0;
         let prevY = 0;
 
-        // Panning state
-        let isPanning = false;
-        let panX = 0;
-        let panY = 0;
-        let prevPanX = 0;
-        let prevPanY = 0;
-
         // Mouse events
         const onMouseDown = (e: MouseEvent) => {
-          // Left button for rotation, right button for panning
-          if (e.button === 0) {
-            isRotating = true;
-            prevX = e.clientX;
-            prevY = e.clientY;
-          } else if (e.button === 2) {
-            isPanning = true;
-            prevPanX = e.clientX;
-            prevPanY = e.clientY;
-          }
-          e.preventDefault();
+          isRotating = true;
+          prevX = e.clientX;
+          prevY = e.clientY;
         };
 
         const onMouseMove = (e: MouseEvent) => {
-          if (isRotating) {
-            const deltaX = e.clientX - prevX;
-            const deltaY = e.clientY - prevY;
+          if (!isRotating) return;
 
-            rotationY += deltaX * 0.01;
-            rotationX += deltaY * 0.01;
+          const deltaX = e.clientX - prevX;
+          const deltaY = e.clientY - prevY;
 
-            mesh.rotation.x = rotationX;
-            mesh.rotation.y = rotationY;
+          rotationY += deltaX * 0.005;
+          rotationX += deltaY * 0.005;
 
-            prevX = e.clientX;
-            prevY = e.clientY;
-          }
+          mesh.rotation.x = rotationX;
+          mesh.rotation.y = rotationY;
 
-          if (isPanning) {
-            const deltaX = e.clientX - prevPanX;
-            const deltaY = e.clientY - prevPanY;
-
-            panX += deltaX * 0.5;
-            panY -= deltaY * 0.5;
-
-            camera.position.x = panX;
-            camera.position.y = panY;
-
-            prevPanX = e.clientX;
-            prevPanY = e.clientY;
-          }
+          prevX = e.clientX;
+          prevY = e.clientY;
         };
 
-        const onMouseUp = (e: MouseEvent) => {
-          if (e.button === 0) {
-            isRotating = false;
-          } else if (e.button === 2) {
-            isPanning = false;
-          }
-        };
-
-        const onContextMenu = (e: MouseEvent) => {
-          e.preventDefault();
+        const onMouseUp = () => {
+          isRotating = false;
         };
 
         const onWheel = (e: WheelEvent) => {
           e.preventDefault();
 
-          // Smooth zoom with easing
-          const zoomAmount = e.deltaY > 0 ? 1.2 : 0.8;
-          targetZoom *= zoomAmount;
-          targetZoom = Math.max(minZoom, Math.min(maxZoom, targetZoom));
-        };
+          if (e.deltaY > 0) {
+            zoomDistance = Math.min(zoomDistance + 10, maxZoom);
+          } else {
+            zoomDistance = Math.max(zoomDistance - 10, minZoom);
+          }
 
-        // Smooth camera updates in animation loop
-        const updateCamera = () => {
-          // Smooth zoom
-          zoomDistance += (targetZoom - zoomDistance) * 0.1;
           camera.position.z = zoomDistance;
-
-          // Apply rotation
-          mesh.rotation.x = rotationX;
-          mesh.rotation.y = rotationY;
-
-          // Apply panning
-          camera.position.x = panX;
-          camera.position.y = panY;
         };
 
-        // Event listeners
         canvas.addEventListener("mousedown", onMouseDown);
         canvas.addEventListener("mousemove", onMouseMove);
         canvas.addEventListener("mouseup", onMouseUp);
-        canvas.addEventListener("mouseleave", () => {
-          isRotating = false;
-          isPanning = false;
-        });
-        canvas.addEventListener("contextmenu", onContextMenu);
+        canvas.addEventListener("mouseleave", onMouseUp);
         canvas.addEventListener("wheel", onWheel, { passive: false });
 
         // Resize handler
@@ -322,7 +267,6 @@ export function STLViewer({
         // Animation loop
         const animate = () => {
           animationId = requestAnimationFrame(animate);
-          updateCamera();
           renderer.render(scene, camera);
         };
 
@@ -441,10 +385,6 @@ export function STLViewer({
               <div className="flex items-center gap-2">
                 <span className="font-bold text-amber-400">⇩</span>
                 <span>Scroll Down to Zoom Out</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-purple-400">🤚</span>
-                <span>Right-click to Pan</span>
               </div>
             </div>
           </div>

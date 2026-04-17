@@ -7,12 +7,13 @@ const apiClient = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Helper function to get and attach token
-async function getAuthConfig() {
-  const session = await getSession();
+// Helper function to get and attach token.
+// Pass accessToken from useSession in polling/live pages to avoid extra session requests.
+async function getAuthConfig(accessToken?: string) {
+  const token = accessToken ?? (await getSession())?.accessToken;
   return {
     headers: {
-      Authorization: session?.accessToken ? `Bearer ${session.accessToken}` : '',
+      Authorization: token ? `Bearer ${token}` : '',
     },
   };
 }
@@ -102,8 +103,10 @@ export interface JobDetail {
 /**
  * Fetch available printers
  */
-export async function fetchAvailablePrinters(): Promise<AvailablePrinters> {
-  const config = await getAuthConfig();
+export async function fetchAvailablePrinters(
+  accessToken?: string,
+): Promise<AvailablePrinters> {
+  const config = await getAuthConfig(accessToken);
   const response = await apiClient.get<AvailablePrinters>('/customer/printers', config);
   return response.data;
 }
@@ -111,8 +114,11 @@ export async function fetchAvailablePrinters(): Promise<AvailablePrinters> {
 /**
  * Upload an STL file
  */
-export async function uploadSTL(file: File): Promise<UploadSTLResponse> {
-  const config = await getAuthConfig();
+export async function uploadSTL(
+  file: File,
+  accessToken?: string,
+): Promise<UploadSTLResponse> {
+  const config = await getAuthConfig(accessToken);
   const formData = new FormData();
   formData.append('file', file);
 
@@ -129,9 +135,12 @@ export async function uploadSTL(file: File): Promise<UploadSTLResponse> {
 /**
  * Create a new job
  */
-export async function createJob(request: CreateJobRequest): Promise<JobDetail> {
+export async function createJob(
+  request: CreateJobRequest,
+  accessToken?: string,
+): Promise<JobDetail> {
   console.log('[API createJob] Input request:', JSON.stringify(request));
-  const config = await getAuthConfig();
+  const config = await getAuthConfig(accessToken);
   console.log('[API createJob] Auth config:', config);
   console.log('[API createJob] Full request data before send:', JSON.stringify(request));
   
@@ -143,8 +152,11 @@ export async function createJob(request: CreateJobRequest): Promise<JobDetail> {
 /**
  * Get job details
  */
-export async function getJobDetail(jobId: string): Promise<JobDetail> {
-  const config = await getAuthConfig();
+export async function getJobDetail(
+  jobId: string,
+  accessToken?: string,
+): Promise<JobDetail> {
+  const config = await getAuthConfig(accessToken);
   const response = await apiClient.get<JobDetail>(`/customer/jobs/${jobId}`, config);
   return response.data;
 }
@@ -152,8 +164,10 @@ export async function getJobDetail(jobId: string): Promise<JobDetail> {
 /**
  * List customer's jobs
  */
-export async function listCustomerJobs(): Promise<{ jobs: JobDetail[]; count: number }> {
-  const config = await getAuthConfig();
+export async function listCustomerJobs(
+  accessToken?: string,
+): Promise<{ jobs: JobDetail[]; count: number }> {
+  const config = await getAuthConfig(accessToken);
   const response = await apiClient.get<{ jobs: JobDetail[]; count: number }>('/customer/jobs/me', config);
   return response.data;
 }

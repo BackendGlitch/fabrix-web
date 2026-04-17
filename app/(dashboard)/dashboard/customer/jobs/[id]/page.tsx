@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { Suspense } from 'react';
-import { useParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { signOut } from 'next-auth/react';
-import { JobDetailView } from '@/components/customer/job-detail-view';
-import { ROUTES } from '@/lib/routes';
-import Link from 'next/link';
-import { ArrowLeft, Home, Package, Loader, LogOut } from 'lucide-react';
+import { Suspense } from "react";
+import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
+import { JobDetailView } from "@/components/customer/job-detail-view";
+import { ROUTES } from "@/lib/routes";
+import Link from "next/link";
+import { ArrowLeft, Home, Package, Loader, LogOut } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
-  OWNER: 'Property Owner',
-  CUSTOMER: 'Customer',
-  ADMIN: 'Administrator',
+  OWNER: "Property Owner",
+  CUSTOMER: "Customer",
+  ADMIN: "Administrator",
 };
 
 interface NavLink {
@@ -24,16 +24,10 @@ interface NavLink {
 
 const navLinks: NavLink[] = [
   {
-    label: 'Dashboard',
+    label: "Dashboard",
     href: ROUTES.dashboard,
     icon: <Home className="w-5 h-5" />,
-    roles: ['CUSTOMER'],
-  },
-  {
-    label: 'My Jobs',
-    href: ROUTES.dashboardAreas.customerJobs,
-    icon: <Package className="w-5 h-5" />,
-    roles: ['CUSTOMER'],
+    roles: ["CUSTOMER"],
   },
 ];
 
@@ -56,7 +50,9 @@ export default function JobDetailPage() {
   const params = useParams();
   const jobId = params.id as string;
   const { data: session } = useSession();
-  const roleLabel = session ? roleLabels[session.user.role] ?? session.user.role : '';
+  const roleLabel = session
+    ? (roleLabels[session.user.role] ?? session.user.role)
+    : "";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -72,9 +68,9 @@ export default function JobDetailPage() {
                     key={link.href}
                     href={link.href as any}
                     className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors text-sm font-medium ${
-                      link.href === ROUTES.dashboardAreas.customerJobs
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      link.href === ROUTES.dashboard
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                     }`}
                   >
                     {link.icon}
@@ -85,7 +81,9 @@ export default function JobDetailPage() {
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{session?.user.name}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {session?.user.name}
+                </p>
                 <p className="text-xs text-gray-500">{roleLabel}</p>
               </div>
               <button
@@ -120,11 +118,11 @@ export default function JobDetailPage() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-4">
           <Link
-            href={ROUTES.dashboardAreas.customerJobs}
+            href={ROUTES.dashboard}
             className="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            Back to Jobs
+            Back to Dashboard
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Job Details</h1>
         </div>

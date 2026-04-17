@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -14,6 +15,8 @@ import {
 
 export function CreateJobForm() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const accessToken = session?.accessToken;
 
   // State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -24,11 +27,16 @@ export function CreateJobForm() {
 
   const handleFileSelect = async (file: File) => {
     try {
+      if (!accessToken) {
+        toast.error('Your session is not ready yet. Please try again.');
+        return;
+      }
+
       setSelectedFile(file);
       setUploading(true);
 
       console.log('[CreateJobForm] Uploading file:', file.name);
-      const response = await uploadSTL(file);
+      const response = await uploadSTL(file, accessToken);
       console.log('[CreateJobForm] Upload response:', response);
 
       if (!response.file || !response.file.id) {
@@ -41,7 +49,7 @@ export function CreateJobForm() {
       // Auto-fetch available printers
       console.log('[CreateJobForm] Fetching available printers...');
       setLoadingPrinters(true);
-      const printersData = await fetchAvailablePrinters();
+      const printersData = await fetchAvailablePrinters(accessToken);
       console.log('[CreateJobForm] Available printers:', printersData.printers);
 
       let selectedPrinter: PrinterOption | null = null;
