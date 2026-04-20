@@ -7,7 +7,7 @@ import { signOut } from "next-auth/react";
 import { JobDetailView } from "@/components/customer/job-detail-view";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
-import { ArrowLeft, Home, Package, Loader, LogOut } from "lucide-react";
+import { ArrowLeft, Home, Package, Loader, LogOut, Zap } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
   OWNER: "Property Owner",
@@ -27,6 +27,12 @@ const navLinks: NavLink[] = [
     label: "Dashboard",
     href: ROUTES.dashboard,
     icon: <Home className="w-5 h-5" />,
+    roles: ["CUSTOMER"],
+  },
+  {
+    label: "Job Status",
+    href: ROUTES.dashboardAreas.customerJobs,
+    icon: <Zap className="w-5 h-5" />,
     roles: ["CUSTOMER"],
   },
 ];
@@ -118,11 +124,11 @@ export default function JobDetailPage() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-4">
           <Link
-            href={ROUTES.dashboard}
+            href={ROUTES.dashboardAreas.customerJobs}
             className="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            Back to Dashboard
+            Back to Jobs
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Job Details</h1>
         </div>

@@ -4,7 +4,7 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import { CustomerFlow } from "@/components/customer/customer-flow";
 import { ROUTES } from "@/lib/routes";
 import { requireAuth } from "@/lib/server/auth/require-auth";
-import { Home, Users, Briefcase, BarChart3, Clock } from "lucide-react";
+import { Home, Users, Briefcase, BarChart3, Clock, Zap } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
   OWNER: "Property Owner",
@@ -38,7 +38,12 @@ const navLinks: NavLink[] = [
     icon: <Home className="w-5 h-5" />,
     roles: ["OWNER", "CUSTOMER", "ADMIN"],
   },
-
+  {
+    label: "Job Status",
+    href: ROUTES.dashboardAreas.customerJobs,
+    icon: <Zap className="w-5 h-5" />,
+    roles: ["CUSTOMER"],
+  },
   {
     label: "Agents",
     href: ROUTES.dashboardAreas.ownerAgents,

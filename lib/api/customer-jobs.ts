@@ -172,4 +172,20 @@ export async function listCustomerJobs(
   return response.data;
 }
 
+/**
+ * Cancel a customer's job
+ */
+export async function cancelCustomerJob(
+  jobId: string,
+  accessToken?: string,
+): Promise<{ message: string; job: JobDetail }> {
+  const config = await getAuthConfig(accessToken);
+  const response = await apiClient.post<{ message: string; job: JobDetail }>(
+    `/customer/jobs/${jobId}/cancel`,
+    {},
+    config,
+  );
+  return response.data;
+}
+
 export default apiClient;
