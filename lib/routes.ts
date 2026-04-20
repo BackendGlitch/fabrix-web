@@ -17,7 +17,7 @@ export const ROUTES = {
     ownerAgents: "/dashboard/owner/agents" as Route,
     ownerJobs: "/dashboard/owner/jobs" as Route,
     customer: "/dashboard/customer" as Route,
-    customerJobs: "/dashboard/customer" as Route,
+    customerJobs: "/dashboard/customer/jobs" as Route,
     customerCreateJob: "/dashboard/customer/jobs/create" as Route,
   },
   api: {

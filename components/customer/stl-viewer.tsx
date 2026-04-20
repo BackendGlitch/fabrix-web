@@ -36,6 +36,7 @@ export function STLViewer({
   const meshRef = useRef<any>(null);
 
   useEffect(() => {
+    // Wait for refs to be properly mounted
     if (!containerRef.current || !canvasRef.current) return;
 
     let animationId: number;
@@ -51,66 +52,146 @@ export function STLViewer({
         const arrayBuffer = await file.arrayBuffer();
         if (!arrayBuffer) throw new Error("Failed to read file");
 
+        console.log("File loaded, size:", arrayBuffer.byteLength, "bytes");
+
         // Parse STL
         const geometry = new THREE.BufferGeometry();
         const view = new DataView(arrayBuffer);
 
-        // Check if binary STL
-        const isBinary = !(
-          new TextDecoder().decode(new Uint8Array(arrayBuffer, 0, 5)) ===
-          "solid"
-        );
+        // Better binary detection: Binary STL has:
+        // - 80 byte header (can contain anything)
+        // - 4 bytes at offset 80: triangle count (uint32)
+        // - Then triangles (50 bytes each)
+        // ASCII STL is text-based
+        let isBinary = true;
+        
+        // Check if file size matches binary format
+        if (arrayBuffer.byteLength >= 84) {
+          const triangleCount = view.getUint32(80, true);
+          const expectedSize = 84 + triangleCount * 50;
+          const headerText = new TextDecoder().decode(new Uint8Array(arrayBuffer, 0, Math.min(80, arrayBuffer.byteLength)));
+          
+          // If file is text-like and starts with "solid", might be ASCII
+          // But check if the structure makes sense for ASCII
+          const isTextHeader = /^solid\s+/i.test(headerText.trim());
+          const binaryStructureMatches = Math.abs(arrayBuffer.byteLength - expectedSize) < 50;
+          
+          // Prefer binary if structure matches or file is not clearly ASCII
+          if (binaryStructureMatches || !isTextHeader) {
+            isBinary = true;
+          } else {
+            // Only treat as ASCII if header looks text-like AND file size doesn't match binary format
+            try {
+              const fullText = new TextDecoder().decode(arrayBuffer);
+              isBinary = !fullText.includes("facet") && !fullText.includes("vertex");
+            } catch {
+              isBinary = true;
+            }
+          }
+        }
+
+        console.log("File format - Size:", arrayBuffer.byteLength, "isBinary:", isBinary);
 
         let vertices: number[] = [];
         let normals: number[] = [];
 
         if (isBinary) {
-          const trianglesCount = view.getUint32(80, true);
-          let offset = 84;
+          try {
+            if (arrayBuffer.byteLength >= 84) {
+              const trianglesCount = view.getUint32(80, true);
+              let offset = 84;
+              let trianglesRead = 0;
 
-          for (let i = 0; i < trianglesCount; i++) {
-            const nx = view.getFloat32(offset, true);
-            const ny = view.getFloat32(offset + 4, true);
-            const nz = view.getFloat32(offset + 8, true);
-            offset += 12;
+              for (let i = 0; i < trianglesCount; i++) {
+                if (offset + 50 > arrayBuffer.byteLength) {
+                  break;
+                }
 
-            for (let j = 0; j < 3; j++) {
-              vertices.push(view.getFloat32(offset, true));
-              vertices.push(view.getFloat32(offset + 4, true));
-              vertices.push(view.getFloat32(offset + 8, true));
-              normals.push(nx, ny, nz);
-              offset += 12;
+                const nx = view.getFloat32(offset, true);
+                const ny = view.getFloat32(offset + 4, true);
+                const nz = view.getFloat32(offset + 8, true);
+                offset += 12;
+
+                for (let j = 0; j < 3; j++) {
+                  if (offset + 12 > arrayBuffer.byteLength) break;
+                  vertices.push(view.getFloat32(offset, true));
+                  vertices.push(view.getFloat32(offset + 4, true));
+                  vertices.push(view.getFloat32(offset + 8, true));
+                  normals.push(nx, ny, nz);
+                  offset += 12;
+                }
+
+                offset += 2; // attribute byte count
+                trianglesRead++;
+              }
+              console.log("Binary parse result - triangles read:", trianglesRead, "vertices:", vertices.length / 3);
             }
-
-            offset += 2;
-          }
-        } else {
-          const text = new TextDecoder().decode(arrayBuffer);
-          const lines = text.split("\n");
-          let currentNormal = { x: 0, y: 0, z: 0 };
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (trimmed.startsWith("facet normal")) {
-              const parts = trimmed.split(/\s+/);
-              currentNormal = {
-                x: parseFloat(parts[2]),
-                y: parseFloat(parts[3]),
-                z: parseFloat(parts[4]),
-              };
-            } else if (trimmed.startsWith("vertex")) {
-              const parts = trimmed.split(/\s+/);
-              vertices.push(
-                parseFloat(parts[1]),
-                parseFloat(parts[2]),
-                parseFloat(parts[3]),
-              );
-              normals.push(currentNormal.x, currentNormal.y, currentNormal.z);
-            }
+          } catch (e) {
+            console.log("Binary parse failed:", e);
+            vertices = [];
+            normals = [];
           }
         }
 
-        if (vertices.length === 0) throw new Error("No vertices in STL");
+        // If binary parsing got no vertices, try ASCII
+        if (vertices.length === 0) {
+          try {
+            console.log("Attempting ASCII parse...");
+            const text = new TextDecoder().decode(arrayBuffer);
+            const lines = text.split("\n");
+            let currentNormal = { x: 0, y: 0, z: 0 };
+            let facetCount = 0;
+            let vertexCount = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i].trim();
+
+              if (!line) continue;
+
+              const lower = line.toLowerCase();
+              
+              if (lower.startsWith("facet")) {
+                facetCount++;
+                const parts = line.split(/\s+/);
+                for (let j = 0; j < parts.length - 3; j++) {
+                  if (parts[j].toLowerCase() === "normal") {
+                    const nx = parseFloat(parts[j + 1]);
+                    const ny = parseFloat(parts[j + 2]);
+                    const nz = parseFloat(parts[j + 3]);
+                    if (!isNaN(nx) && !isNaN(ny) && !isNaN(nz)) {
+                      currentNormal = { x: nx, y: ny, z: nz };
+                    }
+                    break;
+                  }
+                }
+              } 
+              else if (lower.startsWith("vertex")) {
+                vertexCount++;
+                const parts = line.split(/\s+/);
+                if (parts.length >= 4) {
+                  const x = parseFloat(parts[1]);
+                  const y = parseFloat(parts[2]);
+                  const z = parseFloat(parts[3]);
+                  if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
+                    vertices.push(x, y, z);
+                    normals.push(currentNormal.x, currentNormal.y, currentNormal.z);
+                  }
+                }
+              }
+            }
+            console.log("ASCII parse result - facets:", facetCount, "vertices:", vertices.length / 3);
+          } catch (e) {
+            console.log("ASCII parse failed:", e);
+          }
+        }
+
+        if (vertices.length === 0) {
+          throw new Error(
+            "No vertices found in STL file. The file may be empty, corrupted, or in an unsupported format."
+          );
+        }
+
+        console.log("Final vertices count:", vertices.length / 3);
 
         // Setup geometry
         geometry.setAttribute(
@@ -161,6 +242,7 @@ export function STLViewer({
         mesh = new THREE.Mesh(geometry, material);
         // Apply scale to mesh (not geometry) to preserve original dimensions
         mesh.scale.set(scale, scale, scale);
+        mesh.position.set(0, 0, 0); // Ensure mesh is centered
         scene.add(mesh);
 
         // Add axes helper
@@ -173,15 +255,27 @@ export function STLViewer({
         light1.position.set(50, 50, 50);
         scene.add(light1);
 
-        // Setup camera
-        const width = containerRef.current!.clientWidth;
-        const height = containerRef.current!.clientHeight;
+        // Setup camera - with proper null checks
+        if (!containerRef.current) {
+          throw new Error("Container ref is not available");
+        }
+
+        const width = containerRef.current.clientWidth || 800;
+        const height = containerRef.current.clientHeight || 600;
+
+        if (width === 0 || height === 0) {
+          throw new Error("Container has no dimensions - make sure it's visible");
+        }
 
         camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000);
         camera.position.z = 120;
 
         // Setup renderer
-        const canvas = canvasRef.current!;
+        if (!canvasRef.current) {
+          throw new Error("Canvas ref is not available");
+        }
+
+        const canvas = canvasRef.current;
         renderer = new THREE.WebGLRenderer({
           canvas,
           antialias: true,
@@ -218,7 +312,6 @@ export function STLViewer({
 
         // Mouse events
         const onMouseDown = (e: MouseEvent) => {
-          // Left button for rotation, right button for panning
           if (e.button === 0) {
             isRotating = true;
             prevX = e.clientX;
@@ -239,9 +332,6 @@ export function STLViewer({
             rotationY += deltaX * 0.01;
             rotationX += deltaY * 0.01;
 
-            mesh.rotation.x = rotationX;
-            mesh.rotation.y = rotationY;
-
             prevX = e.clientX;
             prevY = e.clientY;
           }
@@ -253,20 +343,14 @@ export function STLViewer({
             panX += deltaX * 0.5;
             panY -= deltaY * 0.5;
 
-            camera.position.x = panX;
-            camera.position.y = panY;
-
             prevPanX = e.clientX;
             prevPanY = e.clientY;
           }
         };
 
         const onMouseUp = (e: MouseEvent) => {
-          if (e.button === 0) {
-            isRotating = false;
-          } else if (e.button === 2) {
-            isPanning = false;
-          }
+          isRotating = false;
+          isPanning = false;
         };
 
         const onContextMenu = (e: MouseEvent) => {
@@ -275,38 +359,32 @@ export function STLViewer({
 
         const onWheel = (e: WheelEvent) => {
           e.preventDefault();
-
-          // Smooth zoom with easing
-          const zoomAmount = e.deltaY > 0 ? 1.2 : 0.8;
+          const zoomAmount = e.deltaY > 0 ? 0.8 : 1.2;
           targetZoom *= zoomAmount;
           targetZoom = Math.max(minZoom, Math.min(maxZoom, targetZoom));
         };
 
         // Smooth camera updates in animation loop
         const updateCamera = () => {
-          // Smooth zoom
           zoomDistance += (targetZoom - zoomDistance) * 0.1;
           camera.position.z = zoomDistance;
-
-          // Apply rotation
           mesh.rotation.x = rotationX;
           mesh.rotation.y = rotationY;
-
-          // Apply panning
           camera.position.x = panX;
           camera.position.y = panY;
         };
 
         // Event listeners
-        canvas.addEventListener("mousedown", onMouseDown);
-        canvas.addEventListener("mousemove", onMouseMove);
-        canvas.addEventListener("mouseup", onMouseUp);
-        canvas.addEventListener("mouseleave", () => {
-          isRotating = false;
-          isPanning = false;
-        });
-        canvas.addEventListener("contextmenu", onContextMenu);
-        canvas.addEventListener("wheel", onWheel, { passive: false });
+        canvas.addEventListener("mousedown", onMouseDown, true);
+        canvas.addEventListener("mousemove", onMouseMove, true);
+        canvas.addEventListener("mouseup", onMouseUp, true);
+        canvas.addEventListener("mouseleave", onMouseUp, true);
+        canvas.addEventListener("contextmenu", onContextMenu, true);
+        canvas.addEventListener("wheel", onWheel, { passive: false, capture: true });
+        
+        // Also add document-level listeners to catch events outside canvas
+        document.addEventListener("mousemove", onMouseMove, true);
+        document.addEventListener("mouseup", onMouseUp, true);
 
         // Resize handler
         const handleResize = () => {
@@ -334,12 +412,17 @@ export function STLViewer({
           window.removeEventListener("resize", handleResize);
           const canvas = canvasRef.current;
           if (canvas) {
-            canvas.removeEventListener("mousedown", onMouseDown);
-            canvas.removeEventListener("mousemove", onMouseMove);
-            canvas.removeEventListener("mouseup", onMouseUp);
-            canvas.removeEventListener("mouseleave", onMouseUp);
-            canvas.removeEventListener("wheel", onWheel);
+            canvas.removeEventListener("mousedown", onMouseDown, true);
+            canvas.removeEventListener("mousemove", onMouseMove, true);
+            canvas.removeEventListener("mouseup", onMouseUp, true);
+            canvas.removeEventListener("mouseleave", onMouseUp, true);
+            canvas.removeEventListener("wheel", onWheel, true);
+            canvas.removeEventListener("contextmenu", onContextMenu, true);
           }
+          // Remove document listeners
+          document.removeEventListener("mousemove", onMouseMove, true);
+          document.removeEventListener("mouseup", onMouseUp, true);
+          
           cancelAnimationFrame(animationId);
 
           // Safely dispose Three.js resources
@@ -356,13 +439,14 @@ export function STLViewer({
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to load model";
         console.error("STL Viewer Error:", msg);
+        console.error("Full error:", err);
         setError(msg);
         setLoading(false);
       }
     };
 
     initViewer();
-  }, [file, scale, onDimensions]);
+  }, [file]);
 
   // Update scaling when scale prop changes
   useEffect(() => {

@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { getJobDetail, type JobDetail } from "@/lib/api/customer-jobs";
-import { AlertCircle, Loader, CheckCircle, Clock } from "lucide-react";
+import { getJobDetail, cancelCustomerJob, type JobDetail } from "@/lib/api/customer-jobs";
+import {
+  AlertCircle,
+  Loader,
+  CheckCircle,
+  Clock,
+  PrinterIcon,
+  Zap,
+  X,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { ROUTES } from "@/lib/routes";
 
@@ -53,13 +61,21 @@ const statusColors: Record<
   },
 };
 
+const statusTimeline = [
+  { status: "pending_owner_approval", label: "Awaiting Approval", order: 1 },
+  { status: "pending", label: "Approved", order: 2 },
+  { status: "queued", label: "Queued", order: 3 },
+  { status: "printing", label: "Printing", order: 4 },
+  { status: "completed", label: "Completed", order: 5 },
+];
+
 // Helper function to format seconds into human readable time
 function formatTime(seconds: number): string {
   if (seconds < 60) {
-    return `${seconds}s`;
+    return `${Math.round(seconds)}s`;
   } else if (seconds < 3600) {
     const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+    const remainingSeconds = Math.round(seconds % 60);
     return `${minutes}m ${remainingSeconds}s`;
   } else {
     const hours = Math.floor(seconds / 3600);
@@ -78,7 +94,7 @@ function calculateElapsedTime(startedAt: string | null): number | null {
 
 // Helper function to calculate remaining time
 function calculateRemainingTime(
-  progress: number | undefined,
+  progress: number,
   elapsedSeconds: number | null,
   estimatedSeconds: number | undefined,
 ): number | null {
@@ -106,6 +122,11 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
   const [job, setJob] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
     if (!accessToken) {
@@ -114,28 +135,63 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
 
     const loadJob = async () => {
       try {
-        setLoading(true);
         const data = await getJobDetail(jobId, accessToken);
         setJob(data);
+        setLastUpdated(new Date());
+        
+        // Only show loading on initial load
+        if (isInitialLoad.current) {
+          setLoading(false);
+          isInitialLoad.current = false;
+        }
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to load job";
         setError(message);
+        if (isInitialLoad.current) {
+          setLoading(false);
+          isInitialLoad.current = false;
+        }
         toast.error(message);
-      } finally {
-        setLoading(false);
       }
     };
 
+    // Initial load
     loadJob();
 
-    // Poll for job updates every 30 seconds
-    const intervalId = setInterval(() => {
+    // Poll for job updates every 5 seconds, but don't cause scroll jumps
+    pollIntervalRef.current = setInterval(() => {
       loadJob();
-    }, 30000);
+    }, 5000);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
   }, [jobId, accessToken]);
+
+  const handleCancel = async () => {
+    if (!accessToken || !job) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this job? This action cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setCancelling(true);
+      const result = await cancelCustomerJob(jobId, accessToken);
+      setJob(result.job);
+      toast.success("Job cancelled successfully");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to cancel job";
+      toast.error(message);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -200,13 +256,29 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
               <p className="text-gray-600 mt-2">{job.description}</p>
             )}
           </div>
-          <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-full ${statusStyle.bg}`}
-          >
-            {statusStyle.icon}
-            <span className={`font-semibold capitalize ${statusStyle.text}`}>
-              {job.status}
-            </span>
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex items-center gap-2 px-4 py-2 rounded-full ${statusStyle.bg}`}
+            >
+              {statusStyle.icon}
+              <span className={`font-semibold capitalize ${statusStyle.text}`}>
+                {job.status}
+              </span>
+            </div>
+            {["pending_owner_approval", "pending", "queued"].includes(job.status) && (
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {cancelling ? (
+                  <Loader className="w-4 h-4 animate-spin" />
+                ) : (
+                  <X className="w-4 h-4" />
+                )}
+                {cancelling ? "Cancelling..." : "Cancel"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -219,6 +291,72 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
             <p className="text-gray-500">Created</p>
             <p className="text-gray-900">{createdDate}</p>
           </div>
+        </div>
+
+        {lastUpdated && (
+          <div className="text-xs text-gray-400 mt-4">
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </div>
+        )}
+      </div>
+
+      {/* Status Timeline */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">
+          Job Progress
+        </h2>
+        <div className="space-y-4">
+          {statusTimeline.map((stage, idx) => {
+            const isCompleted =
+              stage.order <
+              statusTimeline.find((s) => s.status === job.status)?.order;
+            const isCurrent = stage.status === job.status;
+
+            return (
+              <div key={stage.status} className="flex items-start gap-4">
+                {/* Timeline dot */}
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm ${
+                      isCompleted
+                        ? "bg-green-100 text-green-700"
+                        : isCurrent
+                          ? "bg-blue-100 text-blue-700 ring-2 ring-blue-300"
+                          : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    {isCompleted ? "✓" : stage.order}
+                  </div>
+                  {idx < statusTimeline.length - 1 && (
+                    <div
+                      className={`w-0.5 h-12 mt-2 ${
+                        isCompleted ? "bg-green-200" : "bg-gray-200"
+                      }`}
+                    />
+                  )}
+                </div>
+                {/* Timeline content */}
+                <div className="pt-1 flex-1">
+                  <p
+                    className={`font-medium ${
+                      isCompleted
+                        ? "text-green-700"
+                        : isCurrent
+                          ? "text-blue-700"
+                          : "text-gray-400"
+                    }`}
+                  >
+                    {stage.label}
+                  </p>
+                  {isCurrent && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      Your job is currently at this stage
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
