@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getJobDetail, cancelCustomerJob, type JobDetail } from "@/lib/api/customer-jobs";
+import { useCustomerWebSocket } from "@/lib/websocket/customer-websocket";
 import {
   AlertCircle,
   Loader,
@@ -12,6 +14,7 @@ import {
   PrinterIcon,
   Zap,
   X,
+  Activity,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { ROUTES } from "@/lib/routes";
@@ -124,42 +127,93 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialLoad = useRef(true);
+
+  const loadJob = async () => {
+    try {
+      const data = await getJobDetail(jobId, accessToken || "");
+      setJob(data);
+      setLastUpdated(new Date());
+      
+      // Only show loading on initial load
+      if (isInitialLoad.current) {
+        setLoading(false);
+        isInitialLoad.current = false;
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load job";
+      setError(message);
+      if (isInitialLoad.current) {
+        setLoading(false);
+        isInitialLoad.current = false;
+      }
+      toast.error(message);
+    }
+  };
+
+  // CS-09: Set up WebSocket for real-time updates
+  const { isConnected: wsIsConnected } = useCustomerWebSocket({
+    accessToken,
+    enabled: !!accessToken,
+    callbacks: {
+      onJobUpdate: (jobIdUpdate, updateType, data) => {
+        // Only update if this is for the current job
+        if (jobIdUpdate === jobId) {
+          setJob((prevJob) => {
+            if (!prevJob) return null;
+
+            return {
+              ...prevJob,
+              status: data.status,
+              metadata: {
+                ...(prevJob.metadata || {}),
+                progress: data.progress ?? prevJob.metadata?.progress,
+                current_layer: data.currentLayer ?? prevJob.metadata?.current_layer,
+                total_layers: data.totalLayers ?? prevJob.metadata?.total_layers,
+                eta_minutes: data.etaMinutes ?? prevJob.metadata?.eta_minutes,
+                ...(data.errorMessage && { error_message: data.errorMessage }),
+              },
+            };
+          });
+          setLastUpdated(new Date());
+
+          // Show toast for terminal events
+          if (updateType === 'completed') {
+            toast.success(`Job completed: ${data.message}`);
+          } else if (updateType === 'failed') {
+            toast.error(`Job failed: ${data.errorMessage || data.message}`);
+          }
+        }
+      },
+      onConnected: () => {
+        console.log('WebSocket connected, job updates will be real-time');
+        setWsConnected(true);
+      },
+      onDisconnected: () => {
+        console.log('WebSocket disconnected, falling back to polling');
+        setWsConnected(false);
+      },
+      onError: (error) => {
+        console.error('WebSocket error:', error);
+        setWsConnected(false);
+      },
+    },
+  });
 
   useEffect(() => {
     if (!accessToken) {
       return;
     }
 
-    const loadJob = async () => {
-      try {
-        const data = await getJobDetail(jobId, accessToken);
-        setJob(data);
-        setLastUpdated(new Date());
-        
-        // Only show loading on initial load
-        if (isInitialLoad.current) {
-          setLoading(false);
-          isInitialLoad.current = false;
-        }
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to load job";
-        setError(message);
-        if (isInitialLoad.current) {
-          setLoading(false);
-          isInitialLoad.current = false;
-        }
-        toast.error(message);
-      }
-    };
-
     // Initial load
     loadJob();
 
-    // Poll for job updates every 5 seconds, but don't cause scroll jumps
+    // Poll for job updates every 5 seconds as fallback
+    // WebSocket provides real-time updates when available
     pollIntervalRef.current = setInterval(() => {
       loadJob();
     }, 5000);
@@ -265,6 +319,13 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
                 {job.status}
               </span>
             </div>
+            <Link
+              href={`${ROUTES.dashboardAreas.customerJobs}/${job.id}/tracking`}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors font-medium"
+            >
+              <Activity className="w-4 h-4" />
+              Tracking
+            </Link>
             {["pending_owner_approval", "pending", "queued"].includes(job.status) && (
               <button
                 onClick={handleCancel}
