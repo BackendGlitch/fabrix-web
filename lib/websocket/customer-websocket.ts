@@ -328,7 +328,8 @@ export function useCustomerWebSocket(
     cleanup();
     setConnectionState('connecting');
 
-    const wsUrl = `${WS_URL}/ws/frontend`;
+    const encodedToken = encodeURIComponent(accessToken);
+    const wsUrl = `${WS_URL}/ws/frontend?token=${encodedToken}`;
     console.log('Connecting to customer WebSocket:', wsUrl);
 
     try {
@@ -339,21 +340,6 @@ export function useCustomerWebSocket(
       wsRef.current.addEventListener('close', handleClose);
       wsRef.current.addEventListener('error', handleError);
       wsRef.current.addEventListener('message', handleMessage);
-
-      // Send JWT auth as first message
-      wsRef.current.onopen = () => {
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-          wsRef.current.send(
-            JSON.stringify({
-              type: 'auth',
-              token: `Bearer ${accessToken}`,
-            }),
-          );
-        }
-      };
-
-      // Note: Auth is actually done via query param or header, but this pattern is for reference
-      // In real implementation, pass token via URL query param: /ws/frontend?token=...
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
       setConnectionState('error');
