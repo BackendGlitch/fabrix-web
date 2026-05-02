@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { listCustomerJobs, type JobDetail } from "@/lib/api/customer-jobs";
 import { AlertCircle, Loader, CheckCircle, Clock, Plus, Home, Zap, LogOut } from "lucide-react";
 import { ROUTES } from "@/lib/routes";
@@ -89,6 +89,8 @@ export default function CustomerJobsPage() {
   const [jobs, setJobs] = useState<JobDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialLoad = useRef(true);
   const roleLabel = session
     ? (roleLabels[session.user.role] ?? session.user.role)
     : "";
@@ -96,22 +98,39 @@ export default function CustomerJobsPage() {
   useEffect(() => {
     async function loadJobs() {
       try {
-        setLoading(true);
+        if (isInitialLoad.current) {
+          setLoading(true);
+        }
         setError(null);
         const data = await listCustomerJobs(session?.accessToken);
         setJobs(data.jobs || []);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load jobs";
         setError(message);
-        toast.error(message);
+        if (isInitialLoad.current) {
+          toast.error(message);
+        }
       } finally {
         setLoading(false);
+        isInitialLoad.current = false;
       }
     }
 
     if (session?.accessToken) {
+      // Initial load
       loadJobs();
+
+      // Poll for job updates every 5 seconds (fallback when WebSocket unavailable)
+      pollIntervalRef.current = setInterval(() => {
+        loadJobs();
+      }, 5000);
     }
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
   }, [session?.accessToken]);
 
   return (
@@ -241,7 +260,7 @@ export default function CustomerJobsPage() {
               return (
                 <Link
                   key={job.id}
-                  href={`${ROUTES.dashboardAreas.customerJobs}/${job.id}`}
+                  href={`${ROUTES.dashboardAreas.customerJobs}/${job.id}` as any}
                 >
                   <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 cursor-pointer group">
                     <div className="flex justify-between items-start mb-4">

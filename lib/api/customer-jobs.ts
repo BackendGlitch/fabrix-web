@@ -188,4 +188,37 @@ export async function cancelCustomerJob(
   return response.data;
 }
 
+export interface JobTrackingEvent {
+  type: string;
+  data: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface JobTrackingResponse {
+  current: {
+    progress: number;
+    status: string;
+    currentLayer: number;
+    totalLayers: number;
+    etaMinutes: number;
+    timestamp: string;
+  };
+  timeline: JobTrackingEvent[];
+}
+
+/**
+ * WEB-07: Get job tracking timeline and current progress snapshot
+ */
+export async function getJobTracking(
+  jobId: string,
+  accessToken?: string,
+): Promise<JobTrackingResponse> {
+  const config = await getAuthConfig(accessToken);
+  const response = await apiClient.get<JobTrackingResponse>(
+    `/customer/jobs/${jobId}/tracking`,
+    config,
+  );
+  return response.data;
+}
+
 export default apiClient;
