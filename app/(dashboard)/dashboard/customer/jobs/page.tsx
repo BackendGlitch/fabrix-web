@@ -1,88 +1,64 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
 import { listCustomerJobs, type JobDetail } from "@/lib/api/customer-jobs";
-import { AlertCircle, Loader, CheckCircle, Clock, Plus, Home, Zap, LogOut } from "lucide-react";
+import { AlertCircle, Loader, CheckCircle, Clock, Plus, Zap, Box, ArrowRight } from "lucide-react";
 import { ROUTES } from "@/lib/routes";
 import toast from "react-hot-toast";
 
-const statusColors: Record<
-  string,
-  { bg: string; text: string; label: string; icon: React.ReactNode }
-> = {
+const statusConfig: Record<string, { bg: string; text: string; label: string; icon: React.ReactNode; glow: string }> = {
   pending_owner_approval: {
-    bg: "bg-amber-50",
-    text: "text-amber-800",
+    bg: "bg-amber-500/10",
+    text: "text-amber-400",
     label: "Awaiting Approval",
-    icon: <Clock className="w-4 h-4" />,
+    icon: <Clock className="w-3.5 h-3.5" />,
+    glow: "shadow-amber-500/10",
   },
   pending: {
-    bg: "bg-yellow-50",
-    text: "text-yellow-800",
+    bg: "bg-yellow-500/10",
+    text: "text-yellow-400",
     label: "Approved",
-    icon: <Clock className="w-4 h-4" />,
+    icon: <Clock className="w-3.5 h-3.5" />,
+    glow: "shadow-yellow-500/10",
   },
   queued: {
-    bg: "bg-blue-50",
-    text: "text-blue-800",
+    bg: "bg-primary/10",
+    text: "text-primary",
     label: "Queued",
-    icon: <Clock className="w-4 h-4" />,
+    icon: <Clock className="w-3.5 h-3.5" />,
+    glow: "shadow-primary/10",
   },
   printing: {
-    bg: "bg-purple-50",
-    text: "text-purple-800",
+    bg: "bg-magenta/10",
+    text: "text-magenta",
     label: "Printing",
-    icon: <Loader className="w-4 h-4 animate-spin" />,
+    icon: <Zap className="w-3.5 h-3.5 animate-pulse" />,
+    glow: "shadow-magenta/10",
   },
   completed: {
-    bg: "bg-green-50",
-    text: "text-green-800",
+    bg: "bg-lime/10",
+    text: "text-lime",
     label: "Completed",
-    icon: <CheckCircle className="w-4 h-4" />,
+    icon: <CheckCircle className="w-3.5 h-3.5" />,
+    glow: "shadow-lime/10",
   },
   failed: {
-    bg: "bg-red-50",
-    text: "text-red-800",
+    bg: "bg-destructive/10",
+    text: "text-destructive",
     label: "Failed",
-    icon: <AlertCircle className="w-4 h-4" />,
+    icon: <AlertCircle className="w-3.5 h-3.5" />,
+    glow: "shadow-destructive/10",
   },
   cancelled: {
-    bg: "bg-gray-50",
-    text: "text-gray-800",
+    bg: "bg-secondary",
+    text: "text-muted-foreground",
     label: "Cancelled",
-    icon: <AlertCircle className="w-4 h-4" />,
+    icon: <AlertCircle className="w-3.5 h-3.5" />,
+    glow: "",
   },
 };
-
-const roleLabels: Record<string, string> = {
-  OWNER: "Property Owner",
-  CUSTOMER: "Customer",
-  ADMIN: "Administrator",
-};
-
-interface NavLink {
-  label: string;
-  href: string;
-  icon: React.ReactNode;
-  roles: string[];
-}
-
-const navLinks: NavLink[] = [
-  {
-    label: "Dashboard",
-    href: ROUTES.dashboard,
-    icon: <Home className="w-5 h-5" />,
-    roles: ["CUSTOMER"],
-  },
-  {
-    label: "Job Status",
-    href: ROUTES.dashboardAreas.customerJobs,
-    icon: <Zap className="w-5 h-5" />,
-    roles: ["CUSTOMER"],
-  },
-];
 
 export default function CustomerJobsPage() {
   const { data: session } = useSession();
@@ -91,25 +67,18 @@ export default function CustomerJobsPage() {
   const [error, setError] = useState<string | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialLoad = useRef(true);
-  const roleLabel = session
-    ? (roleLabels[session.user.role] ?? session.user.role)
-    : "";
 
   useEffect(() => {
     async function loadJobs() {
       try {
-        if (isInitialLoad.current) {
-          setLoading(true);
-        }
+        if (isInitialLoad.current) setLoading(true);
         setError(null);
         const data = await listCustomerJobs(session?.accessToken);
         setJobs(data.jobs || []);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load jobs";
         setError(message);
-        if (isInitialLoad.current) {
-          toast.error(message);
-        }
+        if (isInitialLoad.current) toast.error(message);
       } finally {
         setLoading(false);
         isInitialLoad.current = false;
@@ -117,204 +86,135 @@ export default function CustomerJobsPage() {
     }
 
     if (session?.accessToken) {
-      // Initial load
       loadJobs();
-
-      // Poll for job updates every 5 seconds (fallback when WebSocket unavailable)
-      pollIntervalRef.current = setInterval(() => {
-        loadJobs();
-      }, 5000);
+      pollIntervalRef.current = setInterval(() => loadJobs(), 5000);
     }
-
     return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-      }
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
   }, [session?.accessToken]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-8">
-              <h1 className="text-2xl font-bold text-gray-900">Fabrix</h1>
-              <nav className="hidden md:flex gap-1">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href as any}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors text-sm font-medium ${
-                      link.href === ROUTES.dashboardAreas.customerJobs
-                        ? "bg-blue-50 text-blue-700"
-                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
-                  >
-                    {link.icon}
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">
-                  {session?.user.name}
-                </p>
-                <p className="text-xs text-gray-500">{roleLabel}</p>
-              </div>
-              <button
-                onClick={() => signOut({ callbackUrl: ROUTES.auth.login })}
-                className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors text-sm font-medium"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
-            </div>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tighter-hero leading-[0.95] mb-2">
+            Job <span className="slant-highlight slant-highlight-lime text-black">Status</span>
+          </h1>
+          <p className="text-muted-foreground">
+            Track all your 3D printing jobs in real-time
+          </p>
         </div>
-      </header>
-
-      {/* Mobile Navigation */}
-      <nav className="md:hidden bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-2 py-2 overflow-x-auto">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href as any}
-              className="flex items-center gap-2 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 whitespace-nowrap text-sm"
-            >
-              {link.icon}
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
-
-      {/* Page Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Job Status</h1>
-              <p className="mt-1 text-sm text-gray-600">
-                Track all your 3D printing jobs in real-time
-              </p>
-            </div>
-            <Link
-              href={ROUTES.dashboard}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-            >
-              <Plus className="w-5 h-5" />
-              New Job
-            </Link>
-          </div>
-        </div>
+        <Link
+          href="/dashboard/customer"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-primary text-primary-foreground font-bold rounded-xl transition-all hover:scale-105 glow-cyan shrink-0"
+        >
+          <Plus className="w-5 h-5" />
+          New Job
+        </Link>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="flex flex-col items-center gap-4">
-              <Loader className="w-8 h-8 animate-spin text-blue-600" />
-              <p className="text-gray-600">Loading your jobs...</p>
+      {/* Content */}
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 rounded-xl border border-primary/20 flex items-center justify-center animate-pulse">
+              <Loader className="w-6 h-6 text-primary animate-spin" />
             </div>
+            <p className="text-muted-foreground text-sm font-mono">Loading your jobs...</p>
           </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-red-800 font-medium">Error loading jobs</p>
-              <p className="text-red-700 text-sm">{error}</p>
-            </div>
+        </div>
+      ) : error ? (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-2xl p-6 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-destructive font-medium">Error loading jobs</p>
+            <p className="text-destructive/80 text-sm">{error}</p>
           </div>
-        ) : jobs.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <div className="flex justify-center mb-4">
-              <Clock className="w-12 h-12 text-gray-400" />
-            </div>
-            <p className="text-gray-600 text-lg font-medium mb-2">No jobs yet</p>
-            <p className="text-gray-500 mb-6">
-              Create your first 3D printing job to get started
-            </p>
-            <Link
-              href={ROUTES.dashboard}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-            >
-              <Plus className="w-5 h-5" />
-              Create Job
-            </Link>
+        </div>
+      ) : jobs.length === 0 ? (
+        <div className="bg-card rounded-2xl border border-border p-12 text-center">
+          <div className="flex justify-center mb-4">
+            <Box className="w-12 h-12 text-muted-foreground/50" />
           </div>
-        ) : (
-          <div className="grid gap-4">
-            {jobs.map((job) => {
-              const statusInfo = statusColors[job.status] || statusColors.pending;
-              const createdDate = new Date(job.createdAt).toLocaleDateString();
-              const createdTime = new Date(job.createdAt).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              });
+          <p className="text-foreground text-lg font-bold mb-2">No jobs yet</p>
+          <p className="text-muted-foreground mb-6">
+            Create your first 3D printing job to get started
+          </p>
+          <Link
+            href="/dashboard/customer"
+            className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-3 rounded-xl transition-colors font-bold glow-cyan"
+          >
+            <Plus className="w-5 h-5" />
+            Create Job
+          </Link>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {jobs.map((job) => {
+            const info = statusConfig[job.status] || statusConfig.pending;
+            const createdDate = new Date(job.createdAt).toLocaleDateString();
+            const createdTime = new Date(job.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
 
-              return (
-                <Link
-                  key={job.id}
-                  href={`${ROUTES.dashboardAreas.customerJobs}/${job.id}` as any}
-                >
-                  <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 cursor-pointer group">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h2 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                          {job.name || job.file.originalName}
-                        </h2>
-                        {job.description && (
-                          <p className="text-sm text-gray-600 mt-1">
-                            {job.description}
-                          </p>
-                        )}
-                      </div>
-                      <div
-                        className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${statusInfo.bg} ${statusInfo.text}`}
-                      >
-                        {statusInfo.icon}
-                        {statusInfo.label}
-                      </div>
+            return (
+              <Link
+                key={job.id}
+                href={`${ROUTES.dashboardAreas.customerJobs}/${job.id}` as any}
+              >
+                <div className="group bg-card rounded-2xl border border-border p-5 transition-all hover:border-primary/30 hover:shadow-[0_0_30px_rgba(0,240,255,0.06)] cursor-pointer">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                        {job.name || job.file.originalName}
+                      </h2>
+                      {job.description && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                          {job.description}
+                        </p>
+                      )}
                     </div>
-
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <div className="flex items-center gap-6">
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">File</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {job.file.originalName}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Size</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {(parseFloat(job.file.size) / 1024 / 1024).toFixed(2)}{" "}
-                            MB
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Created</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {createdDate} at {createdTime}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-blue-600 group-hover:text-blue-700 font-medium">
-                        View Details →
-                      </div>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${info.bg} ${info.text} shrink-0`}>
+                      {info.icon}
+                      {info.label}
                     </div>
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-6 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">File</p>
+                        <p className="text-sm font-medium text-foreground truncate max-w-[180px]">
+                          {job.file.originalName}
+                        </p>
+                      </div>
+                      <div className="hidden sm:block">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Size</p>
+                        <p className="text-sm font-medium text-foreground">
+                          {(parseFloat(job.file.size) / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <div className="hidden md:block">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Created</p>
+                        <p className="text-sm font-medium text-foreground">
+                          {createdDate} at {createdTime}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-primary font-bold group-hover:gap-2 transition-all shrink-0">
+                      Details
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

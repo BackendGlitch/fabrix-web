@@ -29,7 +29,7 @@ export default function WalletBadge() {
   if (balance === null) return null;
 
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+    <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl text-sm font-semibold text-primary">
       <Wallet className="w-4 h-4" />
       <span>{balance} TND</span>
     </div>

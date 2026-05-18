@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { ROUTES } from '@/lib/routes';
+import { LogOut } from 'lucide-react';
 
 export function LogoutButton() {
   const [loading, setLoading] = useState(false);
@@ -16,9 +17,10 @@ export function LogoutButton() {
     <button
       onClick={handleLogout}
       disabled={loading}
-      className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md disabled:opacity-60"
+      title="Logout"
+      className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
     >
-      {loading ? 'Logging out...' : 'Logout'}
+      <LogOut className="w-4 h-4" />
     </button>
   );
 }

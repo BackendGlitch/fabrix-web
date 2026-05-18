@@ -84,11 +84,12 @@ async function loadOwnerPrinters(): Promise<{
 
 function PrintersFallback() {
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-10">
-      <div className="mx-auto max-w-6xl rounded-lg border bg-white p-6 shadow-sm">
-        <p className="text-sm text-gray-600">Loading printer configurations...</p>
+    <div className="space-y-6">
+      <div className="w-12 h-12 rounded-xl border border-primary/20 flex items-center justify-center animate-pulse">
+        <div className="w-6 h-6 bg-primary/20 rounded-full" />
       </div>
-    </main>
+      <p className="text-muted-foreground text-sm font-mono">Loading printer configurations...</p>
+    </div>
   );
 }
 
@@ -105,68 +106,65 @@ async function OwnerPrintersContent() {
   const { agents, standards, error } = await loadOwnerPrinters();
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 px-4 py-10">
-      <section className="mx-auto max-w-6xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Printer Configuration
-            </h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Configure your 3D printers and manage available filaments.
-            </p>
-          </div>
-          <LogoutButton />
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tighter-hero leading-[0.95] mb-2">
+            Printer <span className="slant-highlight slant-highlight-magenta text-black">Config</span>
+          </h1>
+          <p className="text-muted-foreground">
+            Configure your 3D printers and manage available filaments.
+          </p>
         </div>
+      </div>
 
-        {error ? (
-          <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
-            <p className="font-medium">Could not load printers</p>
-            <p className="mt-1 text-amber-800">{error}</p>
-          </div>
-        ) : null}
-
-        {agents.length === 0 && !error ? (
-          <div className="mt-8 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
-            <p className="text-gray-600">No active printers found.</p>
-            <p className="mt-2 text-sm text-gray-500">
-              Pair an agent first to configure your printer.
-            </p>
-            <Link
-              href={ROUTES.dashboardAreas.ownerAgents}
-              className="mt-4 inline-block rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              Go to Agent Pairing
-            </Link>
-          </div>
-        ) : null}
-
-        <div className="mt-8 space-y-8">
-          {agents.map((agent) => (
-            <PrinterConfigManager
-              key={agent.id}
-              agent={{
-                id: agent.id,
-                displayName: agent.displayName,
-                nodeId: agent.nodeId,
-                status: agent.status,
-              }}
-              initialConfig={agent.config}
-              initialFilaments={agent.filaments || []}
-              filamentStandards={standards}
-            />
-          ))}
+      {error ? (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-sm text-amber-400">
+          <p className="font-medium">Could not load printers</p>
+          <p className="mt-1 text-amber-400/80">{error}</p>
         </div>
+      ) : null}
 
-        <p className="mt-8 text-sm text-gray-600">
+      {agents.length === 0 && !error ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+          <p className="text-muted-foreground">No active printers found.</p>
+          <p className="mt-2 text-sm text-muted-foreground/70">
+            Pair an agent first to configure your printer.
+          </p>
           <Link
-            href={ROUTES.dashboard}
-            className="font-medium text-blue-600 hover:text-blue-700"
+            href={ROUTES.dashboardAreas.ownerAgents}
+            className="mt-4 inline-block rounded-xl bg-primary px-5 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 glow-cyan"
           >
-            Back to dashboard
+            Go to Agent Pairing
           </Link>
-        </p>
-      </section>
-    </main>
+        </div>
+      ) : null}
+
+      <div className="space-y-8">
+        {agents.map((agent) => (
+          <PrinterConfigManager
+            key={agent.id}
+            agent={{
+              id: agent.id,
+              displayName: agent.displayName,
+              nodeId: agent.nodeId,
+              status: agent.status,
+            }}
+            initialConfig={agent.config}
+            initialFilaments={agent.filaments || []}
+            filamentStandards={standards}
+          />
+        ))}
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        <Link
+          href={ROUTES.dashboard}
+          className="font-medium text-primary hover:text-primary/80 transition-colors"
+        >
+          Back to dashboard
+        </Link>
+      </p>
+    </div>
   );
 }

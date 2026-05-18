@@ -72,11 +72,12 @@ type AgentsSearchParams = {
 
 function OwnerAgentsFallback() {
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-10">
-      <div className="mx-auto max-w-4xl rounded-lg border bg-white p-6 shadow-sm">
-        <p className="text-sm text-gray-600">Loading…</p>
+    <div className="space-y-6">
+      <div className="w-12 h-12 rounded-xl border border-primary/20 flex items-center justify-center animate-pulse">
+        <div className="w-6 h-6 bg-primary/20 rounded-full" />
       </div>
-    </main>
+      <p className="text-muted-foreground text-sm font-mono">Loading agents...</p>
+    </div>
   );
 }
 
@@ -118,67 +119,67 @@ async function OwnerAgentsContent({
   const revokedAgents = agents.filter((a) => a.status === 'revoked');
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 px-4 py-10">
-      <section className="mx-auto max-w-5xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Agent Pairing</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Approve a pairing code from your running desktop agent, then manage active devices.
-            </p>
-          </div>
-          <LogoutButton />
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tighter-hero leading-[0.95] mb-2">
+            Agent <span className="slant-highlight slant-highlight-magenta text-black">Pairing</span>
+          </h1>
+          <p className="text-muted-foreground">
+            Approve a pairing code from your running desktop agent, then manage active devices.
+          </p>
         </div>
+      </div>
 
         {listError ? (
-          <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-sm text-amber-400">
             <p className="font-medium">Could not load devices</p>
-            <p className="mt-1 text-amber-800">{listError}</p>
-            <p className="mt-2 text-amber-800">Use Sign out above, then sign in again.</p>
+            <p className="mt-1 text-amber-400/80">{listError}</p>
+            <p className="mt-2 text-amber-400/80">Use Sign out above, then sign in again.</p>
           </div>
         ) : null}
 
         {showPaired ? (
-          <p className="mt-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+          <p className="rounded-2xl bg-lime/10 px-4 py-3 text-sm text-lime border border-lime/20">
             Pairing approved. Your agent should finish connecting shortly.
           </p>
         ) : null}
         {showSessionError ? (
-          <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4 text-sm text-amber-400">
             <p className="font-medium">Session not accepted by the API</p>
-            <p className="mt-1 text-amber-800">{OWNER_API_SESSION_REJECTED}</p>
+            <p className="mt-1 text-amber-400/80">{OWNER_API_SESSION_REJECTED}</p>
           </div>
         ) : null}
         {showPairError ? (
-          <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+          <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive border border-destructive/20">
             Could not approve that code. It may be expired, already used, or invalid. Try starting the
             agent again for a new code.
           </p>
         ) : null}
         {showRevokeError ? (
-          <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+          <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive border border-destructive/20">
             Could not revoke that device. Try again, or sign out and sign in if your session expired.
           </p>
         ) : null}
         {showRevoked ? (
-          <p className="mt-4 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-900">
+          <p className="rounded-2xl bg-primary/10 px-4 py-3 text-sm text-primary border border-primary/20">
             Device access revoked. The agent will disconnect and must pair again to reconnect.
           </p>
         ) : null}
 
-        <form action={approvePairingAction} className="mt-6 flex gap-2">
+        <form action={approvePairingAction} className="flex gap-2">
           <input
             type="text"
             name="code"
             placeholder="Enter pairing code"
-            className="w-full rounded border px-3 py-2"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary"
             maxLength={10}
             required
             defaultValue={defaultCode}
           />
           <button
             type="submit"
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 glow-cyan shrink-0"
           >
             Approve
           </button>
@@ -186,23 +187,23 @@ async function OwnerAgentsContent({
 
         <AgentLiveStatusBoard initialAgents={agents} />
 
-        <div className="mt-8 space-y-3">
-          <h2 className="text-sm font-semibold text-gray-800">Active devices</h2>
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Active devices</h2>
           {!listError && activeAgents.length === 0 ? (
-            <p className="text-sm text-gray-600">No active paired agents.</p>
+            <p className="text-sm text-muted-foreground">No active paired agents.</p>
           ) : null}
           {!listError &&
             activeAgents.map((agent) => (
               <article
                 key={agent.id}
-                className="rounded border border-gray-200 bg-gray-50 px-4 py-3"
+                className="rounded-2xl border border-border bg-card px-4 py-3"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{agent.displayName}</p>
-                    <p className="text-xs text-gray-600">Node: {agent.nodeId}</p>
-                    <p className="text-xs text-gray-600">Runtime: {agent.runtimeStatus ?? 'offline'}</p>
-                    <p className="text-xs text-gray-600">
+                    <p className="text-sm font-bold text-foreground">{agent.displayName}</p>
+                    <p className="text-xs text-muted-foreground">Node: {agent.nodeId}</p>
+                    <p className="text-xs text-muted-foreground">Runtime: {agent.runtimeStatus ?? 'offline'}</p>
+                    <p className="text-xs text-muted-foreground">
                       Last seen:{' '}
                       {agent.lastSeenAt ? new Date(agent.lastSeenAt).toLocaleString() : 'Never'}
                     </p>
@@ -211,7 +212,7 @@ async function OwnerAgentsContent({
                     <input type="hidden" name="agentId" value={agent.id} />
                     <button
                       type="submit"
-                      className="rounded bg-red-600 px-3 py-2 text-xs font-medium text-white hover:bg-red-700"
+                      className="rounded-xl bg-destructive px-3 py-2 text-xs font-bold text-destructive-foreground hover:bg-destructive/90"
                     >
                       Revoke access
                     </button>
@@ -222,11 +223,11 @@ async function OwnerAgentsContent({
         </div>
 
         {!listError && revokedAgents.length > 0 ? (
-          <div className="mt-10 space-y-2">
-            <h2 className="text-sm font-semibold text-gray-500">Revoked (cannot reconnect until re-paired)</h2>
-            <ul className="space-y-2 text-sm text-gray-500">
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Revoked (cannot reconnect until re-paired)</h2>
+            <ul className="space-y-2 text-sm text-muted-foreground">
               {revokedAgents.map((agent) => (
-                <li key={agent.id} className="rounded border border-dashed border-gray-200 px-3 py-2">
+                <li key={agent.id} className="rounded-xl border border-dashed border-border px-3 py-2">
                   {agent.displayName} · {agent.nodeId}
                 </li>
               ))}
@@ -234,12 +235,11 @@ async function OwnerAgentsContent({
           </div>
         ) : null}
 
-        <p className="mt-8 text-sm text-gray-600">
-          <Link href={ROUTES.dashboard} className="font-medium text-blue-600 hover:text-blue-700">
+        <p className="text-sm text-muted-foreground">
+          <Link href={ROUTES.dashboard} className="font-medium text-primary hover:text-primary/80 transition-colors">
             Back to dashboard
           </Link>
         </p>
-      </section>
-    </main>
+    </div>
   );
 }

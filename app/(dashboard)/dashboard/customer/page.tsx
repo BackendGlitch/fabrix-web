@@ -1,7 +1,12 @@
-import { redirect } from 'next/navigation';
+"use client";
 
-import { ROUTES } from '@/lib/routes';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default function CustomerRedirectPage() {
-  redirect(ROUTES.dashboard);
+export default function CustomerDashboardPage() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/dashboard");
+  }, [router]);
+  return null;
 }

@@ -159,7 +159,6 @@ export function JobTrackingTimeline({ jobId }: JobTrackingTimelineProps) {
                 currentLayer: data.currentLayer ?? prev.current.currentLayer,
                 totalLayers: data.totalLayers ?? prev.current.totalLayers,
                 etaMinutes: data.etaMinutes ?? prev.current.etaMinutes,
-                timestamp: data.timestamp ?? new Date().toISOString(),
               },
             };
           });
@@ -344,7 +343,7 @@ export function JobTrackingTimeline({ jobId }: JobTrackingTimelineProps) {
           </h3>
           <div className="space-y-3">
             {timeline.map((event, index) => {
-              const eventData = event.data || {};
+              const eventData = (event.data || {}) as any;
               const isProgressEvent = event.type === "progress";
               const isTerminalEvent = ["completed", "failed"].includes(
                 event.type,

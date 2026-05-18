@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
 
@@ -11,7 +12,9 @@ export function Providers({ children }: { children: ReactNode }) {
       refetchOnWindowFocus={false}
       refetchWhenOffline={false}
     >
-      {children}
+      <Suspense fallback={null}>
+        {children}
+      </Suspense>
       <Toaster position="top-right" />
     </SessionProvider>
   );

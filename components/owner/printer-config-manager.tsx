@@ -136,7 +136,12 @@ const FILAMENT_COLORS = [
         pricePerGram: autoPrice,
         stockGrams: newFilament.stockGrams
           ? parseInt(newFilament.stockGrams)
-          : undefined,
+          : null,
+        brand: null,
+        nozzleTemp: null,
+        bedTemp: null,
+        printSpeed: null,
+        notes: null,
       });
       setFilaments([...filaments, filament]);
       setShowAddFilament(false);

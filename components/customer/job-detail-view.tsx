@@ -28,38 +28,38 @@ const statusColors: Record<
   { bg: string; text: string; icon: React.ReactNode }
 > = {
   pending_owner_approval: {
-    bg: "bg-amber-50",
-    text: "text-amber-800",
+    bg: "bg-amber-500/10",
+    text: "text-amber-400",
     icon: <Clock className="w-5 h-5" />,
   },
   pending: {
-    bg: "bg-yellow-50",
-    text: "text-yellow-800",
+    bg: "bg-yellow-500/10",
+    text: "text-yellow-400",
     icon: <Clock className="w-5 h-5" />,
   },
   queued: {
-    bg: "bg-blue-50",
-    text: "text-blue-800",
+    bg: "bg-primary/10",
+    text: "text-primary",
     icon: <Clock className="w-5 h-5" />,
   },
   printing: {
-    bg: "bg-purple-50",
-    text: "text-purple-800",
+    bg: "bg-magenta/10",
+    text: "text-magenta",
     icon: <Loader className="w-5 h-5 animate-spin" />,
   },
   completed: {
-    bg: "bg-green-50",
-    text: "text-green-800",
+    bg: "bg-lime/10",
+    text: "text-lime",
     icon: <CheckCircle className="w-5 h-5" />,
   },
   failed: {
-    bg: "bg-red-50",
-    text: "text-red-800",
+    bg: "bg-destructive/10",
+    text: "text-destructive",
     icon: <AlertCircle className="w-5 h-5" />,
   },
   cancelled: {
-    bg: "bg-gray-50",
-    text: "text-gray-800",
+    bg: "bg-secondary",
+    text: "text-muted-foreground",
     icon: <AlertCircle className="w-5 h-5" />,
   },
 };
@@ -249,10 +249,12 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4">
-          <Loader className="w-8 h-8 animate-spin mx-auto text-blue-600" />
-          <p className="text-gray-600">Loading job details...</p>
+          <div className="w-12 h-12 rounded-xl border border-primary/20 flex items-center justify-center animate-pulse">
+            <Loader className="w-6 h-6 text-primary animate-spin" />
+          </div>
+          <p className="text-muted-foreground text-sm font-mono">Loading job details...</p>
         </div>
       </div>
     );
@@ -260,12 +262,12 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
 
   if (error || !job) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+      <div className="bg-destructive/10 border border-destructive/20 rounded-2xl p-6">
         <div className="flex gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-semibold text-red-900">Error</h3>
-            <p className="text-sm text-red-800 mt-1">
+            <h3 className="font-semibold text-destructive">Error</h3>
+            <p className="text-sm text-destructive/80 mt-1">
               {error || "Job not found"}
             </p>
           </div>
@@ -287,14 +289,14 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Success Message */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+      <div className="bg-lime/10 border border-lime/20 rounded-2xl p-4">
         <div className="flex gap-3">
-          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <CheckCircle className="w-5 h-5 text-lime flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-green-900">
+            <p className="font-semibold text-lime">
               Job Created Successfully!
             </p>
-            <p className="text-sm text-green-800 mt-1">
+            <p className="text-sm text-lime/80 mt-1">
               Your print job has been created and is ready for processing.
             </p>
           </div>
@@ -302,12 +304,12 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
       </div>
 
       {/* Job Header */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-card rounded-2xl border border-border p-6">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{job.name}</h1>
+            <h1 className="text-3xl font-bold text-foreground">{job.name}</h1>
             {job.description && (
-              <p className="text-gray-600 mt-2">{job.description}</p>
+              <p className="text-muted-foreground mt-2">{job.description}</p>
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -320,8 +322,8 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
               </span>
             </div>
             <Link
-              href={`${ROUTES.dashboardAreas.customerJobs}/${job.id}/tracking`}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors font-medium"
+              href={`${ROUTES.dashboardAreas.customerJobs}/${job.id}/tracking` as any}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium"
             >
               <Activity className="w-4 h-4" />
               Tracking
@@ -330,7 +332,7 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {cancelling ? (
                   <Loader className="w-4 h-4 animate-spin" />
@@ -345,32 +347,31 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
 
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-gray-500">Job ID</p>
-            <p className="font-mono text-gray-900 break-all">{job.id}</p>
+            <p className="text-muted-foreground">Job ID</p>
+            <p className="font-mono text-foreground break-all">{job.id}</p>
           </div>
           <div>
-            <p className="text-gray-500">Created</p>
-            <p className="text-gray-900">{createdDate}</p>
+            <p className="text-muted-foreground">Created</p>
+            <p className="text-foreground">{createdDate}</p>
           </div>
         </div>
 
         {lastUpdated && (
-          <div className="text-xs text-gray-400 mt-4">
+          <div className="text-xs text-muted-foreground mt-4">
             Last updated: {lastUpdated.toLocaleTimeString()}
           </div>
         )}
       </div>
 
       {/* Status Timeline */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">
+      <div className="bg-card rounded-2xl border border-border p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-6">
           Job Progress
         </h2>
         <div className="space-y-4">
           {statusTimeline.map((stage, idx) => {
-            const isCompleted =
-              stage.order <
-              statusTimeline.find((s) => s.status === job.status)?.order;
+            const currentStatusOrder = statusTimeline.find((s) => s.status === job.status)?.order ?? 0;
+            const isCompleted = stage.order < currentStatusOrder;
             const isCurrent = stage.status === job.status;
 
             return (
@@ -380,10 +381,10 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm ${
                       isCompleted
-                        ? "bg-green-100 text-green-700"
+                        ? "bg-lime/10 text-lime"
                         : isCurrent
-                          ? "bg-blue-100 text-blue-700 ring-2 ring-blue-300"
-                          : "bg-gray-100 text-gray-400"
+                          ? "bg-primary/20 text-primary ring-2 ring-primary/30"
+                          : "bg-secondary text-muted-foreground"
                     }`}
                   >
                     {isCompleted ? "✓" : stage.order}
@@ -391,7 +392,7 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
                   {idx < statusTimeline.length - 1 && (
                     <div
                       className={`w-0.5 h-12 mt-2 ${
-                        isCompleted ? "bg-green-200" : "bg-gray-200"
+                        isCompleted ? "bg-lime/30" : "bg-border"
                       }`}
                     />
                   )}
@@ -401,16 +402,16 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
                   <p
                     className={`font-medium ${
                       isCompleted
-                        ? "text-green-700"
+                        ? "text-lime"
                         : isCurrent
-                          ? "text-blue-700"
-                          : "text-gray-400"
+                          ? "text-primary"
+                          : "text-muted-foreground"
                     }`}
                   >
                     {stage.label}
                   </p>
                   {isCurrent && (
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Your job is currently at this stage
                     </p>
                   )}
@@ -422,30 +423,30 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
       </div>
 
       {/* File Information */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-card rounded-2xl border border-border p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">
           File Information
         </h2>
         <div className="space-y-4">
           <div>
-            <p className="text-sm text-gray-500">File Name</p>
-            <p className="font-medium text-gray-900">{job.file.originalName}</p>
+            <p className="text-sm text-muted-foreground">File Name</p>
+            <p className="font-medium text-foreground">{job.file.originalName}</p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-gray-500">File Size</p>
-              <p className="font-medium text-gray-900">
+              <p className="text-sm text-muted-foreground">File Size</p>
+              <p className="font-medium text-foreground">
                 {(parseInt(job.file.size, 10) / 1024 / 1024).toFixed(2)} MB
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">MIME Type</p>
-              <p className="font-medium text-gray-900">{job.file.mimeType}</p>
+              <p className="text-sm text-muted-foreground">MIME Type</p>
+              <p className="font-medium text-foreground">{job.file.mimeType}</p>
             </div>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Uploaded</p>
-            <p className="font-medium text-gray-900">
+            <p className="text-sm text-muted-foreground">Uploaded</p>
+            <p className="font-medium text-foreground">
               {new Date(job.file.uploadedAt).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "short",
@@ -457,24 +458,24 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
       </div>
 
       {/* Printer Assignment */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-card rounded-2xl border border-border p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">
           Printer Assignment
         </h2>
         {job.printerId ? (
           <div className="space-y-2">
-            <p className="text-sm text-gray-500">Assigned Printer</p>
-            <p className="font-medium text-gray-900">
+            <p className="text-sm text-muted-foreground">Assigned Printer</p>
+            <p className="font-medium text-foreground">
               Printer ID: {job.printerId}
             </p>
-            <p className="text-xs text-gray-600 mt-3">
+            <p className="text-xs text-muted-foreground mt-3">
               Your job has been assigned to a printer and will begin printing
               soon.
             </p>
           </div>
         ) : (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-sm text-yellow-900">
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4">
+            <p className="text-sm text-amber-400">
               No printer has been assigned yet. Your job will be assigned when a
               suitable printer becomes available.
             </p>
@@ -483,8 +484,8 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
       </div>
 
       {/* Progress & Time Estimation */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-card rounded-2xl border border-border p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">
           Progress & Time Estimation
         </h2>
 
@@ -493,19 +494,19 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
           {typeof metadata?.progress === "number" && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Print Progress</span>
-                <span className="font-semibold text-gray-900">
+                <span className="text-muted-foreground">Print Progress</span>
+                <span className="font-semibold text-foreground">
                   {metadata.progress}%
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-secondary rounded-full h-2.5">
                 <div
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  className="bg-gradient-to-r from-primary to-magenta h-2.5 rounded-full transition-all duration-300"
                   style={{ width: `${metadata.progress}%` }}
                 ></div>
               </div>
               {typeof metadata?.last_progress_message === "string" && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {metadata.last_progress_message}
                 </p>
               )}
@@ -516,15 +517,15 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Estimated Time */}
             {metadata?.estimated_time_seconds && (
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <p className="text-sm text-blue-800 mb-1">
+              <div className="bg-primary/10 rounded-2xl p-4 border border-primary/20">
+                <p className="text-sm text-primary mb-1">
                   Estimated Print Time
                 </p>
-                <p className="text-lg font-semibold text-blue-900">
+                <p className="text-lg font-semibold text-foreground">
                   {typeof metadata.estimated_time_seconds === "number" &&
                     formatTime(metadata.estimated_time_seconds)}
                 </p>
-                <p className="text-xs text-blue-700 mt-1">
+                <p className="text-xs text-primary/70 mt-1">
                   Based on model dimensions and scale
                 </p>
               </div>
@@ -532,12 +533,12 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
 
             {/* Elapsed Time */}
             {job.startedAt && (
-              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                <p className="text-sm text-green-800 mb-1">Elapsed Time</p>
-                <p className="text-lg font-semibold text-green-900">
+              <div className="bg-lime/10 rounded-2xl p-4 border border-lime/20">
+                <p className="text-sm text-lime mb-1">Elapsed Time</p>
+                <p className="text-lg font-semibold text-foreground">
                   {formatTime(calculateElapsedTime(job.startedAt) || 0)}
                 </p>
-                <p className="text-xs text-green-700 mt-1">
+                <p className="text-xs text-lime/70 mt-1">
                   Started{" "}
                   {new Date(job.startedAt).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -549,11 +550,11 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
 
             {/* Remaining Time */}
             {job.startedAt && job.metadata?.estimated_time_seconds && (
-              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                <p className="text-sm text-purple-800 mb-1">
+              <div className="bg-magenta/10 rounded-2xl p-4 border border-magenta/20">
+                <p className="text-sm text-magenta mb-1">
                   Estimated Remaining
                 </p>
-                <p className="text-lg font-semibold text-purple-900">
+                <p className="text-lg font-semibold text-foreground">
                   {(() => {
                     const elapsed = calculateElapsedTime(job.startedAt);
                     const progress = metadata?.progress;
@@ -573,7 +574,7 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
                     }
                   })()}
                 </p>
-                <p className="text-xs text-purple-700 mt-1">
+                <p className="text-xs text-magenta/70 mt-1">
                   {job.metadata?.progress
                     ? "Based on current progress"
                     : "Based on initial estimate"}
@@ -583,12 +584,12 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
 
             {/* Status-specific messages */}
             {!job.startedAt && job.metadata?.estimated_time_seconds && (
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <p className="text-sm text-gray-800 mb-1">Print Not Started</p>
-                <p className="text-lg font-semibold text-gray-900">
+              <div className="bg-secondary rounded-2xl p-4 border border-border">
+                <p className="text-sm text-muted-foreground mb-1">Print Not Started</p>
+                <p className="text-lg font-semibold text-foreground">
                   Waiting to begin
                 </p>
-                <p className="text-xs text-gray-700 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Estimated:{" "}
                   {typeof metadata?.estimated_time_seconds === "number"
                     ? formatTime(metadata.estimated_time_seconds)
@@ -599,14 +600,14 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
           </div>
 
           {/* Status Timeline */}
-          <div className="pt-4 border-t border-gray-200">
-            <p className="text-sm font-semibold text-gray-900 mb-3">
+          <div className="pt-4 border-t border-border">
+            <p className="text-sm font-semibold text-foreground mb-3">
               Status Timeline
             </p>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Created</span>
-                <span className="text-gray-900">
+                <span className="text-muted-foreground">Created</span>
+                <span className="text-foreground">
                   {new Date(job.createdAt).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -615,8 +616,8 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
               </div>
               {job.startedAt && (
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Print Started</span>
-                  <span className="text-gray-900">
+                  <span className="text-muted-foreground">Print Started</span>
+                  <span className="text-foreground">
                     {new Date(job.startedAt).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -626,8 +627,8 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
               )}
               {job.completedAt && (
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Completed</span>
-                  <span className="text-gray-900">
+                  <span className="text-muted-foreground">Completed</span>
+                  <span className="text-foreground">
                     {new Date(job.completedAt).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -642,18 +643,18 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
 
       {/* Print Settings */}
       {job.metadata && Object.keys(job.metadata).length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-card rounded-2xl border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
             Print Settings
           </h2>
           <div className="space-y-3">
             {Object.entries(job.metadata).map(([key, value]) => (
               <div
                 key={key}
-                className="flex justify-between py-2 border-b border-gray-200"
+                className="flex justify-between py-2 border-b border-border"
               >
-                <span className="text-gray-600 capitalize">{key}:</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-muted-foreground capitalize">{key}:</span>
+                <span className="font-medium text-foreground">
                   {typeof value === "string" || typeof value === "number"
                     ? value
                     : JSON.stringify(value)}
@@ -667,14 +668,14 @@ export function JobDetailView({ jobId }: JobDetailViewProps) {
       {/* Actions */}
       <div className="flex gap-4">
         <button
-          onClick={() => router.push(ROUTES.dashboard)}
-          className="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-900 font-medium py-3 px-4 rounded-lg transition-colors"
+          onClick={() => router.push("/dashboard/customer" as any)}
+          className="flex-1 border border-border hover:bg-secondary text-foreground font-medium py-3 px-4 rounded-xl transition-colors"
         >
           Back to Dashboard
         </button>
         <button
-          onClick={() => router.push(ROUTES.dashboard)}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+          onClick={() => router.push("/dashboard/customer" as any)}
+          className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 px-4 rounded-xl transition-colors glow-cyan"
         >
           Create New Job
         </button>

@@ -19,6 +19,7 @@ import {
   Layers,
   Wallet,
   Plus,
+  Box,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -35,7 +36,7 @@ import {
   getWallet,
   payForJob,
   checkBalance,
-  type Wallet,
+  type Wallet as WalletType,
 } from "@/lib/api/wallet";
 import {
   calculatePrice,
@@ -350,18 +351,18 @@ export function CustomerFlow() {
         return (
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                <FileUp className="w-8 h-8 text-blue-600" />
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+                <FileUp className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl font-bold text-foreground mb-2">
                 Upload Your 3D Model
               </h2>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 Upload your STL file to start the printing process
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-8">
+            <div className="bg-surface rounded-lg shadow p-8">
               <STLFileUpload
                 onFileSelect={handleFileSelect}
                 isLoading={loading}
@@ -376,7 +377,7 @@ export function CustomerFlow() {
                     autoRefresh={true}
                     refreshInterval={5000}
                     showDetails={false}
-                    className="bg-white/70 rounded p-3"
+                    className="bg-surface/70 rounded p-3"
                   />
 
                 </div>
@@ -392,9 +393,9 @@ export function CustomerFlow() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Preview Section - 2/3 width */}
               <div className="lg:col-span-2">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-full flex flex-col">
-                  <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-                    <h3 className="text-base font-semibold text-gray-900">
+                <div className="bg-surface rounded-xl shadow-sm border border-border overflow-hidden h-full flex flex-col">
+                  <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-gray-50 to-white">
+                    <h3 className="text-base font-semibold text-foreground">
                       3D Model Preview
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">
@@ -420,9 +421,9 @@ export function CustomerFlow() {
               {/* Sidebar - 1/3 width */}
               <div className="space-y-6">
                 {/* File Info */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Package className="w-4 h-4 text-blue-600" />
+                <div className="bg-surface rounded-xl shadow-sm border border-border p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Package className="w-4 h-4 text-primary" />
                     File Details
                   </h3>
                   <div className="space-y-3">
@@ -430,13 +431,13 @@ export function CustomerFlow() {
                       <p className="text-xs font-semibold text-blue-900 uppercase tracking-wide">
                         Name
                       </p>
-                      <p className="text-sm font-bold text-gray-900 truncate mt-1">
+                      <p className="text-sm font-bold text-foreground truncate mt-1">
                         {jobDetails.fileName}
                       </p>
                     </div>
                     {jobDetails.fileId && (
                       <div>
-                        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                           File ID
                         </p>
                         <p className="text-xs font-mono text-gray-700 truncate mt-1">
@@ -457,28 +458,28 @@ export function CustomerFlow() {
 
                 {/* Dimensions */}
                 {jobDetails.dimensions && (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Ruler className="w-4 h-4 text-blue-600" />
+                  <div className="bg-surface rounded-xl shadow-sm border border-border p-5">
+                    <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <Ruler className="w-4 h-4 text-primary" />
                       Model Dimensions
                     </h3>
                     <div className="space-y-3">
                       <div className="grid grid-cols-3 gap-3">
-                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                          <p className="text-xs text-gray-600">Width (X)</p>
-                          <p className="text-sm font-bold text-gray-900">
+                        <div className="bg-secondary rounded-lg p-3 border border-border">
+                          <p className="text-xs text-muted-foreground">Width (X)</p>
+                          <p className="text-sm font-bold text-foreground">
                             {jobDetails.dimensions.width.toFixed(2)} mm
                           </p>
                         </div>
-                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                          <p className="text-xs text-gray-600">Height (Y)</p>
-                          <p className="text-sm font-bold text-gray-900">
+                        <div className="bg-secondary rounded-lg p-3 border border-border">
+                          <p className="text-xs text-muted-foreground">Height (Y)</p>
+                          <p className="text-sm font-bold text-foreground">
                             {jobDetails.dimensions.height.toFixed(2)} mm
                           </p>
                         </div>
-                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                          <p className="text-xs text-gray-600">Depth (Z)</p>
-                          <p className="text-sm font-bold text-gray-900">
+                        <div className="bg-secondary rounded-lg p-3 border border-border">
+                          <p className="text-xs text-muted-foreground">Depth (Z)</p>
+                          <p className="text-sm font-bold text-foreground">
                             {jobDetails.dimensions.depth.toFixed(2)} mm
                           </p>
                         </div>
@@ -487,7 +488,7 @@ export function CustomerFlow() {
                         <p className="text-xs text-blue-900 font-semibold">
                           Volume
                         </p>
-                        <p className="text-sm font-bold text-gray-900">
+                        <p className="text-sm font-bold text-foreground">
                           {(
                             jobDetails.dimensions.width *
                             jobDetails.dimensions.height *
@@ -501,8 +502,8 @@ export function CustomerFlow() {
                 )}
 
                 {/* Scale Controls */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                <div className="bg-surface rounded-xl shadow-sm border border-border p-5">
+                  <h3 className="text-sm font-semibold text-foreground mb-4">
                     Scale Control
                   </h3>
                   <div className="space-y-4">
@@ -535,7 +536,7 @@ export function CustomerFlow() {
                 <div className="flex gap-3">
                   <button
                     onClick={handleBack}
-                    className="flex-1 px-4 py-3 border border-gray-300 text-gray-900 font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-3 border border-gray-300 text-foreground font-medium rounded-lg hover:bg-secondary transition-colors flex items-center justify-center gap-2"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     Back
@@ -557,29 +558,29 @@ export function CustomerFlow() {
         return (
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-lime/10 rounded-full mb-4">
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl font-bold text-foreground mb-2">
                 Confirm Your Print Job
               </h2>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 Review all details before starting the print
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow border border-gray-200 p-8">
+            <div className="bg-surface rounded-lg shadow border border-border p-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Column - Job Details */}
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">
                       Print Details
                     </h3>
                     <div className="space-y-4">
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm text-gray-600 mb-1">File Name</p>
-                        <p className="font-medium text-gray-900">
+                      <div className="bg-secondary rounded-lg p-4">
+                        <p className="text-sm text-muted-foreground mb-1">File Name</p>
+                        <p className="font-medium text-foreground">
                           {jobDetails.fileName}
                         </p>
                       </div>
@@ -623,15 +624,15 @@ export function CustomerFlow() {
                   {/* Filament Selection */}
                   {jobDetails.printer?.printerConfigId && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <Package className="w-5 h-5 text-blue-600" />
+                      <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                        <Package className="w-5 h-5 text-primary" />
                         Select Filament
                       </h3>
                       {(() => {
                         const pf = printerFilaments[jobDetails.printer.printerConfigId];
                         if (!pf || pf.loading) {
                           return (
-                            <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
+                            <div className="bg-secondary rounded-lg p-4 text-sm text-muted-foreground">
                               Loading available filaments...
                             </div>
                           );
@@ -652,7 +653,7 @@ export function CustomerFlow() {
                                 className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                                   jobDetails.filament?.id === filament.id
                                     ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-200 hover:bg-gray-50'
+                                    : 'border-border hover:bg-secondary'
                                 }`}
                               >
                                 <input
@@ -667,7 +668,7 @@ export function CustomerFlow() {
                                   style={{ backgroundColor: filament.colorHex || '#ccc' }}
                                 />
                                 <div className="flex-1">
-                                  <p className="font-medium text-sm text-gray-900">
+                                  <p className="font-medium text-sm text-foreground">
                                     {filament.type} - {filament.color}
                                   </p>
                                   <p className="text-xs text-gray-500">
@@ -677,7 +678,7 @@ export function CustomerFlow() {
                                   </p>
                                 </div>
                                 {jobDetails.filament?.id === filament.id && (
-                                  <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                                  <CheckCircle2 className="w-5 h-5 text-primary" />
                                 )}
                               </label>
                             ))}
@@ -689,8 +690,8 @@ export function CustomerFlow() {
 
                   {/* Printer Status */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Printer className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <Printer className="w-5 h-5 text-primary" />
                       Printer Status
                     </h3>
                     {jobDetails.printer ? (
@@ -804,7 +805,7 @@ export function CustomerFlow() {
                         </div>
 
                         {/* Filament Info */}
-                        <div className="text-xs text-green-700 bg-green-100/50 rounded p-2">
+                        <div className="text-xs text-green-700 bg-lime/5 rounded p-2">
                           Filament: {priceEstimate.breakdown.filamentType} • {priceEstimate.breakdown.filamentColor}
                         </div>
 
@@ -851,7 +852,7 @@ export function CustomerFlow() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-blue-800">Status</span>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-primary/10 text-blue-800">
                           Ready to Start
                         </span>
                       </div>
@@ -880,7 +881,7 @@ export function CustomerFlow() {
 
                     <button
                       onClick={handleBack}
-                      className="w-full py-2.5 border border-gray-300 text-gray-900 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                      className="w-full py-2.5 border border-gray-300 text-foreground font-medium rounded-lg hover:bg-secondary transition-colors"
                     >
                       Back to Preview
                     </button>
@@ -905,39 +906,39 @@ export function CustomerFlow() {
       case "processing":
         return (
           <div className="max-w-md mx-auto text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-6">
-              <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-6">
+              <Loader2 className="w-10 h-10 text-primary animate-spin" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            <h2 className="text-2xl font-bold text-foreground mb-3">
               Starting Your Print Job
             </h2>
-            <p className="text-gray-600 mb-8">
+            <p className="text-muted-foreground mb-8">
               We're setting up everything for your 3D print. This may take a
               moment...
             </p>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-surface rounded-lg shadow p-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     Uploading model data
                   </span>
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     Preparing printer
                   </span>
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     Initializing job
                   </span>
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Starting print</span>
+                  <span className="text-sm text-muted-foreground">Starting print</span>
                   <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
                 </div>
               </div>
@@ -948,27 +949,27 @@ export function CustomerFlow() {
       case "complete":
         return (
           <div className="max-w-md mx-auto text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-lime/10 rounded-full mb-6">
               <CheckCircle2 className="w-10 h-10 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            <h2 className="text-2xl font-bold text-foreground mb-3">
               Print Job Started!
             </h2>
-            <p className="text-gray-600 mb-8">
+            <p className="text-muted-foreground mb-8">
               Your 3D print job has been successfully started. You can track its
               progress in real-time.
             </p>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-surface rounded-lg shadow p-6">
               <div className="space-y-4">
                 <div className="text-left">
-                  <p className="text-sm text-gray-600 mb-1">Job ID</p>
-                  <p className="font-mono text-sm text-gray-900 bg-gray-100 p-2 rounded">
+                  <p className="text-sm text-muted-foreground mb-1">Job ID</p>
+                  <p className="font-mono text-sm text-foreground bg-gray-100 p-2 rounded">
                     {jobDetails.fileId?.substring(0, 12)}...
                   </p>
                 </div>
                 <div className="text-left">
-                  <p className="text-sm text-gray-600 mb-1">Status</p>
+                  <p className="text-sm text-muted-foreground mb-1">Status</p>
                   <p className="font-semibold text-green-600">
                     Printing in Progress
                   </p>
@@ -990,7 +991,7 @@ export function CustomerFlow() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-secondary py-8">
       {/* Progress Steps */}
       {currentStep !== "processing" && currentStep !== "complete" && (
         <div className="max-w-5xl mx-auto mb-8 px-4 sm:px-6 lg:px-8">
@@ -1008,7 +1009,7 @@ export function CustomerFlow() {
                       className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
                         isActive || isCompleted
                           ? "bg-blue-600 border-blue-600 text-white"
-                          : "bg-white border-gray-300 text-gray-400"
+                          : "bg-surface border-gray-300 text-gray-400"
                       }`}
                     >
                       <StepIcon className="w-5 h-5" />
@@ -1016,7 +1017,7 @@ export function CustomerFlow() {
                     <span
                       className={`mt-2 text-xs font-medium ${
                         isActive || isCompleted
-                          ? "text-blue-600"
+                          ? "text-primary"
                           : "text-gray-500"
                       }`}
                     >

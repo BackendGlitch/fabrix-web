@@ -1,275 +1,270 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { LogoutButton } from "@/components/auth/logout-button";
-import { CustomerFlow } from "@/components/customer/customer-flow";
+import CustomerDashboard from "@/components/customer/customer-dashboard";
 import { ROUTES } from "@/lib/routes";
 import { requireAuth } from "@/lib/server/auth/require-auth";
-import { Home, Users, Briefcase, BarChart3, Clock, Zap, Printer, Wallet } from "lucide-react";
-import WalletBadge from "@/components/wallet/wallet-badge";
+import {
+  Users,
+  BarChart3,
+  Clock,
+  Zap,
+  Printer,
+  Wallet,
+  ArrowUpRight,
+  Box,
+  Layers,
+} from "lucide-react";
 
 const roleLabels: Record<string, string> = {
-  OWNER: "Property Owner",
-  CUSTOMER: "Customer",
-  ADMIN: "Administrator",
+  OWNER: "Printer Owner",
+  CUSTOMER: "Maker",
+  ADMIN: "Admin",
 };
 
 function DashboardFallback() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <p className="text-gray-600">Loading...</p>
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 rounded-xl border border-primary/20 flex items-center justify-center animate-pulse">
+          <Box className="w-6 h-6 text-primary" />
         </div>
+        <p className="text-muted-foreground text-sm">Loading your hub...</p>
       </div>
     </div>
   );
 }
 
-interface NavLink {
+function StatCard({
+  label,
+  value,
+  icon,
+  color,
+  href,
+}: {
   label: string;
-  href: string;
+  value: string;
   icon: React.ReactNode;
-  roles: string[];
+  color: "cyan" | "magenta" | "lime";
+  href: string;
+}) {
+  const colorMap = {
+    cyan: "from-primary/10 to-primary/5 border-primary/20 text-primary",
+    magenta:
+      "from-magenta/10 to-magenta/5 border-magenta/20 text-magenta",
+    lime: "from-lime/10 to-lime/5 border-lime/20 text-lime",
+  };
+
+  return (
+    <Link
+      href={href as any}
+      className={`group relative overflow-hidden rounded-2xl border bg-gradient-to-br ${colorMap[color]} p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="text-3xl font-bold tracking-tight">{value}</p>
+        </div>
+        <div className="p-3 rounded-xl bg-background/50 backdrop-blur-sm">
+          {icon}
+        </div>
+      </div>
+      <ArrowUpRight className="absolute bottom-4 right-4 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </Link>
+  );
 }
 
-const navLinks: NavLink[] = [
-  {
-    label: "Dashboard",
-    href: ROUTES.dashboard,
-    icon: <Home className="w-5 h-5" />,
-    roles: ["OWNER", "CUSTOMER", "ADMIN"],
-  },
-  {
-    label: "Job Status",
-    href: ROUTES.dashboardAreas.customerJobs,
-    icon: <Zap className="w-5 h-5" />,
-    roles: ["CUSTOMER"],
-  },
-  {
-    label: "Wallet",
-    href: ROUTES.dashboardAreas.customerWallet,
-    icon: <Wallet className="w-5 h-5" />,
-    roles: ["CUSTOMER"],
-  },
-  {
-    label: "Agents",
-    href: ROUTES.dashboardAreas.ownerAgents,
-    icon: <Users className="w-5 h-5" />,
-    roles: ["OWNER"],
-  },
-  {
-    label: "Printers",
-    href: ROUTES.dashboardAreas.ownerPrinters,
-    icon: <Printer className="w-5 h-5" />,
-    roles: ["OWNER"],
-  },
-  {
-    label: "Pending Jobs",
-    href: ROUTES.dashboardAreas.ownerJobs,
-    icon: <Clock className="w-5 h-5" />,
-    roles: ["OWNER"],
-  },
-  {
-    label: "Earnings",
-    href: ROUTES.dashboardAreas.ownerWallet,
-    icon: <Wallet className="w-5 h-5" />,
-    roles: ["OWNER"],
-  },
-  {
-    label: "System Health",
-    href: ROUTES.status,
-    icon: <BarChart3 className="w-5 h-5" />,
-    roles: ["OWNER", "ADMIN"],
-  },
-];
+function QuickActionCard({
+  title,
+  description,
+  icon,
+  href,
+  accent,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  href: string;
+  accent: "cyan" | "magenta" | "lime" | "orange";
+}) {
+  const accentMap = {
+    cyan: "hover:border-primary/40 hover:shadow-[0_0_30px_rgba(0,240,255,0.1)]",
+    magenta:
+      "hover:border-magenta/40 hover:shadow-[0_0_30px_rgba(255,45,110,0.1)]",
+    lime: "hover:border-lime/40 hover:shadow-[0_0_30px_rgba(204,255,0,0.1)]",
+    orange:
+      "hover:border-orange-500/40 hover:shadow-[0_0_30px_rgba(255,149,0,0.1)]",
+  };
+
+  return (
+    <Link
+      href={href as any}
+      className={`group block rounded-2xl border border-border bg-card p-6 transition-all duration-300 ${accentMap[accent]}`}
+    >
+      <div className="flex items-center gap-4 mb-3">
+        <div className="p-3 rounded-xl bg-secondary">{icon}</div>
+        <h3 className="text-lg font-semibold group-hover:text-primary transition-colors">
+          {title}
+        </h3>
+      </div>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </Link>
+  );
+}
 
 async function DashboardContent() {
   const session = await requireAuth();
+
   const roleLabel = roleLabels[session.user.role] ?? session.user.role;
-  const visibleNavLinks = navLinks.filter((link) =>
-    link.roles.includes(session.user.role),
-  );
+
+  // Customer role: render customer dashboard inline
+  if (session.user.role === "CUSTOMER") {
+    return (
+      <Suspense fallback={<DashboardFallback />}>
+        <CustomerDashboard />
+      </Suspense>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-8">
-              <h1 className="text-2xl font-bold text-gray-900">Fabrix</h1>
-              <nav className="hidden md:flex gap-1">
-                {visibleNavLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href as any}
-                    className="flex items-center gap-2 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors text-sm font-medium"
-                  >
-                    {link.icon}
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-            <div className="flex items-center gap-4">
-              <WalletBadge />
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">
-                  {session.user.name}
-                </p>
-                <p className="text-xs text-gray-500">{roleLabel}</p>
-              </div>
-              <LogoutButton />
-            </div>
+    <div className="space-y-8">
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-surface to-background p-8 sm:p-10">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-magenta/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+              {roleLabel}
+            </span>
           </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tighter-hero mb-4">
+            Welcome back,
+            <br />
+            <span className="gradient-text">{session.user.name}</span>
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-xl">
+            {session.user.role === "OWNER"
+              ? "Manage your printers, review pending jobs, and track your earnings."
+              : "Monitor system health and manage platform operations."}
+          </p>
         </div>
-      </header>
+      </div>
 
-      {/* Mobile Navigation */}
-      <nav className="md:hidden bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-2 py-2 overflow-x-auto">
-          {visibleNavLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href as any}
-              className="flex items-center gap-2 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 whitespace-nowrap text-sm"
-            >
-              {link.icon}
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        {/* Role-specific content */}
-        {session.user.role === "CUSTOMER" ? (
-          <div className="space-y-6">
-            {/* Welcome Section for Customers */}
-            <div className="mb-6">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                Welcome, {session.user.name}!
-              </h2>
-              <p className="text-gray-600">
-                Ready to start your 3D printing journey? Upload your model
-                below.
-              </p>
-            </div>
-
-            {/* Customer Flow */}
-            <CustomerFlow />
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {/* Welcome Section */}
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                Welcome, {session.user.name}!
-              </h2>
-              <p className="text-gray-600">Here's your Fabrix dashboard</p>
-            </div>
-
-            {/* User Info Card */}
-            <div className="bg-white rounded-lg shadow p-6 mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Account Information
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Email Address</p>
-                  <p className="font-medium text-gray-900">
-                    {session.user.email}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Role</p>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                      {roleLabel}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Account ID</p>
-                  <p className="font-mono text-sm text-gray-900">
-                    {session.user.id.substring(0, 8)}...
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions for OWNER/ADMIN */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {session.user.role === "OWNER" && (
-                <>
-                  <Link
-                    href={ROUTES.dashboardAreas.ownerAgents}
-                    className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow hover:border-blue-400 border"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <Users className="w-6 h-6 text-blue-600" />
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Agents
-                      </h3>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Manage and pair your 3D printer agents
-                    </p>
-                  </Link>
-
-                  <Link
-                    href={ROUTES.status}
-                    className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow hover:border-blue-400 border"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <BarChart3 className="w-6 h-6 text-green-600" />
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        System Health
-                      </h3>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Check system status and health metrics
-                    </p>
-                  </Link>
-
-                  <Link
-                    href={ROUTES.dashboardAreas.ownerJobs}
-                    className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow hover:border-blue-400 border"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <Clock className="w-6 h-6 text-amber-600" />
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Pending Jobs
-                      </h3>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Review and approve jobs waiting for your printers
-                    </p>
-                  </Link>
-                </>
-              )}
-
-              {session.user.role === "ADMIN" && (
-                <Link
-                  href={ROUTES.status}
-                  className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow hover:border-blue-400 border"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <BarChart3 className="w-6 h-6 text-purple-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      System Health
-                    </h3>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Monitor all system metrics and logs
-                  </p>
-                </Link>
-              )}
-            </div>
+      {/* Role-specific content */}
+      <div className="space-y-8">
+        {/* Owner Stats */}
+        {session.user.role === "OWNER" && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard
+              label="Earnings"
+              value="View →"
+              icon={<Wallet className="w-5 h-5" />}
+              color="cyan"
+              href={ROUTES.dashboardAreas.ownerWallet}
+            />
+            <StatCard
+              label="Pending Jobs"
+              value="View →"
+              icon={<Clock className="w-5 h-5" />}
+              color="magenta"
+              href={ROUTES.dashboardAreas.ownerJobs}
+            />
+            <StatCard
+              label="Agents"
+              value="View →"
+              icon={<Box className="w-5 h-5" />}
+              color="lime"
+              href={ROUTES.dashboardAreas.ownerAgents}
+            />
           </div>
         )}
-      </main>
+
+        {/* Quick Actions */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {session.user.role === "OWNER" && (
+              <>
+                <QuickActionCard
+                  title="Manage Agents"
+                  description="Pair and configure your 3D printer agents"
+                  icon={<Users className="w-5 h-5 text-primary" />}
+                  href={ROUTES.dashboardAreas.ownerAgents}
+                  accent="cyan"
+                />
+                <QuickActionCard
+                  title="Printers"
+                  description="Configure printer settings and filaments"
+                  icon={<Printer className="w-5 h-5 text-magenta" />}
+                  href={ROUTES.dashboardAreas.ownerPrinters}
+                  accent="magenta"
+                />
+                <QuickActionCard
+                  title="Pending Jobs"
+                  description="Review and approve incoming print requests"
+                  icon={<Clock className="w-5 h-5 text-lime" />}
+                  href={ROUTES.dashboardAreas.ownerJobs}
+                  accent="lime"
+                />
+                <QuickActionCard
+                  title="Earnings"
+                  description="Track your revenue and withdraw funds"
+                  icon={<Wallet className="w-5 h-5 text-primary" />}
+                  href={ROUTES.dashboardAreas.ownerWallet}
+                  accent="cyan"
+                />
+                <QuickActionCard
+                  title="System Health"
+                  description="Monitor all system metrics and logs"
+                  icon={<BarChart3 className="w-5 h-5 text-orange-400" />}
+                  href={ROUTES.status}
+                  accent="orange"
+                />
+              </>
+            )}
+
+            {session.user.role === "ADMIN" && (
+              <QuickActionCard
+                title="System Health"
+                description="Monitor all system metrics and logs"
+                icon={<BarChart3 className="w-5 h-5 text-primary" />}
+                href={ROUTES.status}
+                accent="cyan"
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Account Info */}
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="text-lg font-semibold mb-4">Account</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                Email
+              </p>
+              <p className="font-mono text-sm">{session.user.email}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                Role
+              </p>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                {roleLabel}
+              </span>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                ID
+              </p>
+              <p className="font-mono text-sm text-muted-foreground">
+                {session.user.id.substring(0, 8)}...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
