@@ -4,7 +4,8 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import { CustomerFlow } from "@/components/customer/customer-flow";
 import { ROUTES } from "@/lib/routes";
 import { requireAuth } from "@/lib/server/auth/require-auth";
-import { Home, Users, Briefcase, BarChart3, Clock, Zap } from "lucide-react";
+import { Home, Users, Briefcase, BarChart3, Clock, Zap, Printer, Wallet } from "lucide-react";
+import WalletBadge from "@/components/wallet/wallet-badge";
 
 const roleLabels: Record<string, string> = {
   OWNER: "Property Owner",
@@ -45,15 +46,33 @@ const navLinks: NavLink[] = [
     roles: ["CUSTOMER"],
   },
   {
+    label: "Wallet",
+    href: ROUTES.dashboardAreas.customerWallet,
+    icon: <Wallet className="w-5 h-5" />,
+    roles: ["CUSTOMER"],
+  },
+  {
     label: "Agents",
     href: ROUTES.dashboardAreas.ownerAgents,
     icon: <Users className="w-5 h-5" />,
     roles: ["OWNER"],
   },
   {
+    label: "Printers",
+    href: ROUTES.dashboardAreas.ownerPrinters,
+    icon: <Printer className="w-5 h-5" />,
+    roles: ["OWNER"],
+  },
+  {
     label: "Pending Jobs",
     href: ROUTES.dashboardAreas.ownerJobs,
     icon: <Clock className="w-5 h-5" />,
+    roles: ["OWNER"],
+  },
+  {
+    label: "Earnings",
+    href: ROUTES.dashboardAreas.ownerWallet,
+    icon: <Wallet className="w-5 h-5" />,
     roles: ["OWNER"],
   },
   {
@@ -93,6 +112,7 @@ async function DashboardContent() {
               </nav>
             </div>
             <div className="flex items-center gap-4">
+              <WalletBadge />
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">
                   {session.user.name}

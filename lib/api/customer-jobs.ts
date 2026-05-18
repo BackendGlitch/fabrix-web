@@ -55,7 +55,9 @@ export interface PrinterOption {
   status: 'online' | 'offline';
   activityState: 'idle' | 'working' | 'offline';
   lastHeartbeatAt: string | null;
+  capabilities?: Record<string, unknown>;
   options?: Record<string, unknown>;
+  printerConfigId?: string;
 }
 
 export interface AvailablePrinters {

@@ -14,6 +14,11 @@ import {
   Package,
   ArrowLeft,
   FileUp,
+  DollarSign,
+  Clock,
+  Layers,
+  Wallet,
+  Plus,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -26,6 +31,18 @@ import {
   createJob,
   type PrinterOption,
 } from "@/lib/api/customer-jobs";
+import {
+  getWallet,
+  payForJob,
+  checkBalance,
+  type Wallet,
+} from "@/lib/api/wallet";
+import {
+  calculatePrice,
+  getAvailableFilaments,
+  type PricingBreakdown,
+  type FilamentOption,
+} from "@/lib/api/pricing";
 
 type FlowStep = "upload" | "preview" | "confirm" | "processing" | "complete";
 
@@ -37,8 +54,21 @@ interface JobDetails {
     height: number;
     depth: number;
   };
-  printer?: PrinterOption;
+  printer?: PrinterOption & { printerConfigId?: string };
   scale: number;
+  filament?: FilamentOption;
+}
+
+interface PriceEstimate {
+  breakdown: PricingBreakdown;
+  loading: boolean;
+  error?: string;
+}
+
+interface PrinterFilaments {
+  printerId: string;
+  filaments: FilamentOption[];
+  loading: boolean;
 }
 
 export function CustomerFlow() {
@@ -53,6 +83,8 @@ export function CustomerFlow() {
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileBlob, setFileBlob] = useState<File | null>(null);
+  const [priceEstimate, setPriceEstimate] = useState<PriceEstimate | null>(null);
+  const [printerFilaments, setPrinterFilaments] = useState<Record<string, PrinterFilaments>>({});
 
   const steps = [
     { id: "upload", label: "Upload STL", icon: Upload },
@@ -139,8 +171,94 @@ export function CustomerFlow() {
     setJobDetails((prev) => ({ ...prev, scale }));
   };
 
-  const handleProceedToConfirm = () => {
+  const handleProceedToConfirm = async () => {
     setCurrentStep("confirm");
+
+    // Load filaments for selected printer
+    if (jobDetails.printer?.printerConfigId) {
+      const printerId = jobDetails.printer.printerConfigId;
+      if (!printerFilaments[printerId]) {
+        setPrinterFilaments((prev) => ({
+          ...prev,
+          [printerId]: { printerId, filaments: [], loading: true },
+        }));
+
+        try {
+          const filaments = await getAvailableFilaments(printerId);
+          setPrinterFilaments((prev) => ({
+            ...prev,
+            [printerId]: { printerId, filaments, loading: false },
+          }));
+
+          // Auto-select first filament if available
+          if (filaments.length > 0 && !jobDetails.filament) {
+            setJobDetails((prev) => ({ ...prev, filament: filaments[0] }));
+            // Recalculate price with selected filament
+            calculatePriceWithFilament(filaments[0]);
+          }
+        } catch (error) {
+          console.error("Failed to load filaments:", error);
+          setPrinterFilaments((prev) => ({
+            ...prev,
+            [printerId]: { printerId, filaments: [], loading: false },
+          }));
+        }
+      }
+    }
+
+    // Calculate initial price estimate
+    if (jobDetails.fileId && accessToken) {
+      calculatePriceWithFilament(jobDetails.filament);
+    }
+  };
+
+  const calculatePriceWithFilament = async (filament?: FilamentOption) => {
+    console.log('[PriceCalc] Starting calculation:', {
+      fileId: jobDetails.fileId,
+      printerConfigId: jobDetails.printer?.printerConfigId,
+      filamentId: filament?.id,
+      scale: jobDetails.scale,
+    });
+
+    if (!jobDetails.fileId) {
+      console.error('[PriceCalc] No fileId!');
+      return;
+    }
+
+    setPriceEstimate({ breakdown: {} as PricingBreakdown, loading: true });
+
+    try {
+      const requestData = {
+        fileId: jobDetails.fileId,
+        scale: jobDetails.scale,
+        printerConfigId: jobDetails.printer?.printerConfigId,
+        filamentId: filament?.id,
+        printSettings: {
+          infillPercent: 20,
+          layerHeight: "0.2",
+          wallCount: 3,
+          supportEnabled: false,
+        },
+      };
+      console.log('[PriceCalc] Request:', requestData);
+
+      const breakdown = await calculatePrice(requestData);
+      console.log('[PriceCalc] Success:', breakdown);
+
+      setPriceEstimate({ breakdown, loading: false });
+    } catch (error) {
+      console.error('[PriceCalc] Error:', error);
+      setPriceEstimate({
+        breakdown: {} as PricingBreakdown,
+        loading: false,
+        error: error instanceof Error ? error.message : "Could not calculate price estimate",
+      });
+    }
+  };
+
+  const handleFilamentSelect = (filament: FilamentOption) => {
+    setJobDetails((prev) => ({ ...prev, filament }));
+    calculatePriceWithFilament(filament);
   };
 
   const handleBack = () => {
@@ -157,43 +275,64 @@ export function CustomerFlow() {
       return;
     }
 
-    if (!accessToken) {
-      toast.error("Your session is not ready yet. Please try again.");
+    // Check if price is calculated
+    const totalPrice = priceEstimate?.breakdown?.totalPrice;
+    if (!totalPrice) {
+      toast.error("Please wait for price calculation");
       return;
     }
 
     try {
-      setCurrentStep("processing");
       setLoading(true);
 
+      if (!jobDetails.fileId || !accessToken) {
+        throw new Error("Missing file or authentication");
+      }
+
+      // 1. Check wallet balance
+      const balanceCheck = await checkBalance(Math.ceil(totalPrice));
+      
+      if (!balanceCheck.hasEnough) {
+        toast.error(
+          `Insufficient credits. Required: ${Math.ceil(totalPrice)} TND, Available: ${balanceCheck.availableBalance} TND. Please top up your wallet.`
+        );
+        // Redirect to wallet page
+        router.push("/dashboard/wallet");
+        setLoading(false);
+        return;
+      }
+
+      // 2. Create the job first
       const job = await createJob(
         {
           fileId: jobDetails.fileId,
-          name: jobDetails.fileName.replace(".stl", "") || "Untitled",
+          name: jobDetails.fileName?.replace(".stl", "") || "Untitled",
           description: `3D print job - ${new Date().toLocaleString()}`,
           metadata: {
             dimensions: jobDetails.dimensions,
             scale: jobDetails.scale,
+            filamentId: jobDetails.filament?.id,
+            filamentType: jobDetails.filament?.type,
+            filamentColor: jobDetails.filament?.color,
+            priceEstimate: totalPrice,
           },
         },
         accessToken,
       );
 
-      console.log("[CustomerFlow] Job created successfully:", job);
+      // 3. Pay for the job using credits
+      const paymentResult = await payForJob(job.id, Math.ceil(totalPrice));
+      toast.success(`Payment successful! ${Math.ceil(totalPrice)} TND deducted from your wallet.`);
 
-      // Show success message based on printer status
-      if (jobDetails.printer) {
-        toast.success(`🎉 Print started on ${jobDetails.printer.displayName}!`);
-      } else {
-        toast.success(
-          "✅ Job queued successfully - will print when printer available",
-        );
-      }
+      setCurrentStep("processing");
 
-      // Redirect to job tracking page
+      // Simulate processing time, then redirect to tracking
       setTimeout(() => {
-        router.push(`/dashboard/customer/jobs/${job.id}` as any);
-      }, 1500);
+        setCurrentStep("complete");
+        setTimeout(() => {
+          router.push(`/dashboard/customer/jobs/${job.id}`);
+        }, 1500);
+      }, 2000);
     } catch (error) {
       console.error("[CustomerFlow] Error creating job:", error);
       const errorMessage =
@@ -481,6 +620,73 @@ export function CustomerFlow() {
                     </div>
                   </div>
 
+                  {/* Filament Selection */}
+                  {jobDetails.printer?.printerConfigId && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Package className="w-5 h-5 text-blue-600" />
+                        Select Filament
+                      </h3>
+                      {(() => {
+                        const pf = printerFilaments[jobDetails.printer.printerConfigId];
+                        if (!pf || pf.loading) {
+                          return (
+                            <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
+                              Loading available filaments...
+                            </div>
+                          );
+                        }
+                        if (pf.filaments.length === 0) {
+                          return (
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                              No filaments configured for this printer.
+                              The owner needs to add filaments first.
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="space-y-2">
+                            {pf.filaments.map((filament) => (
+                              <label
+                                key={filament.id}
+                                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                  jobDetails.filament?.id === filament.id
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-gray-200 hover:bg-gray-50'
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="filament"
+                                  checked={jobDetails.filament?.id === filament.id}
+                                  onChange={() => handleFilamentSelect(filament)}
+                                  className="sr-only"
+                                />
+                                <div
+                                  className="w-6 h-6 rounded-full border"
+                                  style={{ backgroundColor: filament.colorHex || '#ccc' }}
+                                />
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm text-gray-900">
+                                    {filament.type} - {filament.color}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {filament.brand && `${filament.brand} • `}
+                                    {filament.pricePerGram} TND/g
+                                    {filament.stockGrams !== null && ` • ${filament.stockGrams}g available`}
+                                  </p>
+                                </div>
+                                {jobDetails.filament?.id === filament.id && (
+                                  <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                                )}
+                              </label>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
                   {/* Printer Status */}
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -533,6 +739,97 @@ export function CustomerFlow() {
 
                 {/* Right Column - Summary & Actions */}
                 <div className="space-y-6">
+                  {/* Price Estimate */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
+                    <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
+                      <DollarSign className="w-5 h-5" />
+                      Price Estimate
+                    </h3>
+
+                    {priceEstimate?.loading ? (
+                      <div className="flex items-center gap-3 text-green-700">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Calculating price...</span>
+                      </div>
+                    ) : priceEstimate?.error ? (
+                      <div className="text-amber-700 text-sm">
+                        {priceEstimate.error}
+                      </div>
+                    ) : priceEstimate?.breakdown?.totalPrice ? (
+                      <div className="space-y-4">
+                        {/* Price Breakdown */}
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between text-green-800">
+                            <span className="flex items-center gap-1">
+                              <Layers className="w-4 h-4" />
+                              Filament ({priceEstimate.breakdown.filamentWeightGrams.toFixed(1)}g)
+                            </span>
+                            <span>{priceEstimate.breakdown.filamentCost.toFixed(2)} DT</span>
+                          </div>
+                          <div className="flex justify-between text-green-800">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              Machine Time ({Math.ceil(priceEstimate.breakdown.estimatedPrintTimeMinutes / 60)}h)
+                            </span>
+                            <span>{priceEstimate.breakdown.machineTimeCost.toFixed(2)} DT</span>
+                          </div>
+                          {priceEstimate.breakdown.supportMaterialCost > 0 && (
+                            <div className="flex justify-between text-green-800">
+                              <span>Support Material</span>
+                              <span>{priceEstimate.breakdown.supportMaterialCost.toFixed(2)} DT</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-green-800">
+                            <span>Platform Fee</span>
+                            <span>{priceEstimate.breakdown.platformFee.toFixed(2)} DT</span>
+                          </div>
+                        </div>
+
+                        {/* Total - Credits Required */}
+                        <div className="pt-3 border-t border-green-200">
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-green-900 text-lg">
+                              Credits Required
+                            </span>
+                            <span className="font-bold text-green-900 text-2xl">
+                              {Math.ceil(priceEstimate.breakdown.totalPrice)} Credits
+                            </span>
+                          </div>
+                          <p className="text-sm text-green-700 mt-1">
+                            Equivalent to {Math.ceil(priceEstimate.breakdown.totalPrice)} TND (1 Credit = 1 TND)
+                          </p>
+                          <p className="text-xs text-green-600 mt-1">
+                            Estimated {priceEstimate.breakdown.estimatedPrintTimeMinutes} min print time
+                          </p>
+                        </div>
+
+                        {/* Filament Info */}
+                        <div className="text-xs text-green-700 bg-green-100/50 rounded p-2">
+                          Filament: {priceEstimate.breakdown.filamentType} • {priceEstimate.breakdown.filamentColor}
+                        </div>
+
+                        {/* Wallet Note */}
+                        <div className="text-xs text-blue-700 bg-blue-50 rounded p-2 flex items-center gap-2">
+                          <Wallet className="w-4 h-4" />
+                          <span>
+                            You need {Math.ceil(priceEstimate.breakdown.totalPrice)} credits in your wallet. 
+                            <a href="/dashboard/wallet" className="underline font-medium">Top up now</a>
+                          </span>
+                        </div>
+
+                        {!priceEstimate.breakdown.fitsOnBed && (
+                          <div className="text-xs text-amber-700 bg-amber-100 rounded p-2">
+                            ⚠️ Model may not fit. Suggested scale: {priceEstimate.breakdown.scaleToFit?.toFixed(2)}x
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-green-700 text-sm">
+                        Price will be calculated after you proceed
+                      </div>
+                    )}
+                  </div>
+
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
                     <h3 className="text-lg font-semibold text-blue-900 mb-4">
                       Print Summary
@@ -557,16 +854,6 @@ export function CustomerFlow() {
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
                           Ready to Start
                         </span>
-                      </div>
-                      <div className="pt-3 border-t border-blue-200">
-                        <div className="flex justify-between">
-                          <span className="font-semibold text-blue-900">
-                            Total
-                          </span>
-                          <span className="font-bold text-blue-900">
-                            Ready to Print
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </div>

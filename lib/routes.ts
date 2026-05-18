@@ -15,10 +15,13 @@ export const ROUTES = {
     admin: "/dashboard/admin" as Route,
     owner: "/dashboard/owner" as Route,
     ownerAgents: "/dashboard/owner/agents" as Route,
+    ownerPrinters: "/dashboard/owner/printers" as Route,
     ownerJobs: "/dashboard/owner/jobs" as Route,
+    ownerWallet: "/dashboard/owner/wallet" as Route,
     customer: "/dashboard/customer" as Route,
     customerJobs: "/dashboard/customer/jobs" as Route,
     customerCreateJob: "/dashboard/customer/jobs/create" as Route,
+    customerWallet: "/dashboard/wallet" as Route,
   },
   api: {
     authRegister: "/api/auth/register",
