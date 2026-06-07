@@ -24,10 +24,7 @@ export const proxy = auth((request) => {
     return NextResponse.redirect(new URL(ROUTES.dashboard, request.nextUrl));
   }
 
-  if (pathname === ROUTES.home && !isAuthenticated) {
-    return NextResponse.redirect(new URL(ROUTES.auth.login, request.nextUrl));
-  }
-
+  // Allow unauthenticated users to see the landing page
   return NextResponse.next();
 });
 
