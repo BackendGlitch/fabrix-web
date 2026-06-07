@@ -256,14 +256,14 @@ export function LandingPage() {
               {[
                 {
                   size: 'Tiny',
-                  price: 'from $5',
+                  price: 'from 15 TND',
                   examples: ['Mini figurines', 'Phone stands', 'Cable clips'],
                   color: 'border-primary',
                   bg: 'bg-primary/5'
                 },
                 {
                   size: 'Medium',
-                  price: 'from $15',
+                  price: 'from 50 TND',
                   examples: ['Mechanical parts', 'Organizers', 'Prototypes'],
                   color: 'border-lime',
                   bg: 'bg-lime/5',
