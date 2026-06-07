@@ -40,7 +40,7 @@ export async function getWallet(): Promise<Wallet> {
   const token = await getAuthToken();
   if (!token) throw new Error("Not authenticated");
 
-  const response = await fetch(`${API_URL}/wallet`, {
+  const response = await fetch(`${API_URL}wallet`, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -60,7 +60,7 @@ export async function getTransactions(limit?: number): Promise<Transaction[]> {
   const token = await getAuthToken();
   if (!token) throw new Error("Not authenticated");
 
-  const url = new URL(`${API_URL}/wallet/transactions`);
+  const url = new URL(`${API_URL}wallet/transactions`);
   if (limit) url.searchParams.append("limit", limit.toString());
 
   const response = await fetch(url.toString(), {
@@ -91,7 +91,7 @@ export async function createPaymentIntent(amount: number): Promise<{ success: bo
   const token = await getAuthToken();
   if (!token) throw new Error("Not authenticated");
 
-  const response = await fetch(`${API_URL}/wallet/create-intent`, {
+  const response = await fetch(`${API_URL}wallet/create-intent`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -112,7 +112,7 @@ export async function confirmPayment(intentId: string): Promise<{ success: boole
   const token = await getAuthToken();
   if (!token) throw new Error("Not authenticated");
 
-  const response = await fetch(`${API_URL}/wallet/confirm-payment`, {
+  const response = await fetch(`${API_URL}wallet/confirm-payment`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -133,7 +133,7 @@ export async function createPayout(amount: number, destination: string): Promise
   const token = await getAuthToken();
   if (!token) throw new Error("Not authenticated");
 
-  const response = await fetch(`${API_URL}/wallet/payout`, {
+  const response = await fetch(`${API_URL}wallet/payout`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -154,7 +154,7 @@ export async function payForJob(jobId: string, amount: number): Promise<{ succes
   const token = await getAuthToken();
   if (!token) throw new Error("Not authenticated");
 
-  const response = await fetch(`${API_URL}/wallet/pay`, {
+  const response = await fetch(`${API_URL}wallet/pay`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -175,7 +175,7 @@ export async function checkBalance(amount: number): Promise<BalanceCheck> {
   const token = await getAuthToken();
   if (!token) throw new Error("Not authenticated");
 
-  const response = await fetch(`${API_URL}/wallet/check-balance`, {
+  const response = await fetch(`${API_URL}wallet/check-balance`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

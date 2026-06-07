@@ -1,14 +1,21 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-import { auth } from '@/auth';
+import { useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/lib/routes';
+import { LandingPage } from '@/components/layout/landing-page';
 
-export default async function HomePage() {
-  const session = await auth();
+export default function HomePage() {
+  const { data: session } = useSession();
+  const router = useRouter();
 
-  if (session?.user) {
-    redirect(ROUTES.dashboard);
-  }
+  useEffect(() => {
+    if (session?.user) {
+      router.replace(ROUTES.dashboard);
+    }
+  }, [session, router]);
 
-  redirect(ROUTES.auth.login);
+  // Show landing page for unauthenticated users
+  return <LandingPage />;
 }
