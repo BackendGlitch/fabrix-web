@@ -1,6 +1,6 @@
 import { getSession } from 'next-auth/react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-fabrix.backendglitch.com";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-fabrix-v2.backendglitch.com";
 
 // Helper function to get auth token from session
 async function getAuthToken(): Promise<string | undefined> {

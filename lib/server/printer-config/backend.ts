@@ -3,7 +3,7 @@ import 'server-only';
 import { auth } from '@/auth';
 
 function apiBaseUrl(): string {
-  const base = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'https://api-fabrix.backendglitch.com';
+  const base = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'https://api-fabrix-v2.backendglitch.com';
   if (!base) {
     throw new Error('Missing API_URL or NEXT_PUBLIC_API_URL');
   }

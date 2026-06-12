@@ -2,7 +2,7 @@
 
 import { getSession } from 'next-auth/react';
 
-const API_BASE = process.env.NEXT_PUBLIC_CENTRAL_API_URL || 'https://api-fabrix.backendglitch.com';
+const API_BASE = process.env.NEXT_PUBLIC_CENTRAL_API_URL || 'https://api-fabrix-v2.backendglitch.com';
 
 export interface PrinterConfig {
   id: string;

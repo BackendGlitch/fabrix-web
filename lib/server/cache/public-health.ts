@@ -13,7 +13,7 @@ export interface PublicHealthSnapshot {
 }
 
 function getApiBaseUrl(): string {
-  const url = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'https://api-fabrix.backendglitch.com';
+  const url = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'https://api-fabrix-v2.backendglitch.com';
   if (!url) {
     throw new Error('Missing API URL. Set API_URL or NEXT_PUBLIC_API_URL.');
   }

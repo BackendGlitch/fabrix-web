@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { getSession } from "next-auth/react";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-fabrix.backendglitch.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-fabrix-v2.backendglitch.com";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
