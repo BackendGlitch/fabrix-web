@@ -378,13 +378,18 @@ export function LandingPage() {
                 <h4 className="font-bold text-sm mb-4 text-primary">Company</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>
-                    <a href="#" className="hover:text-primary transition-colors">
-                      About
+                    <a
+                      href="https://backendglitch.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-primary transition-colors"
+                    >
+                      BackendGlitch
                     </a>
                   </li>
                   <li>
                     <a href="#" className="hover:text-primary transition-colors">
-                      Blog
+                      About
                     </a>
                   </li>
                   <li>
@@ -412,10 +417,44 @@ export function LandingPage() {
               </div>
             </div>
 
-            <div className="border-t border-primary/10 pt-8">
-              <p className="text-center text-sm text-muted-foreground">
-                © 2026 Fabrix. All rights reserved.
-              </p>
+            <div className="border-t border-primary/10 pt-8 space-y-6">
+              <div className="text-center space-y-3">
+                {/* Company & project attribution */}
+                <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                  <span>A product built by</span>
+                  <a
+                    href="https://backendglitch.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:text-accent transition-colors font-semibold"
+                  >
+                    <span>BackendGlitch</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                </div>
+
+                {/* Intern credit */}
+                <div className="text-xs text-muted-foreground/70 space-y-1">
+                  <p>
+                    Developed as a{' '}
+                    <span className="font-medium text-muted-foreground">Projet de Fin d&apos;Études</span>
+                    {' '}by intern{' '}
+                    <a
+                      href="https://github.com/ACPIdark"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-primary/80 hover:text-primary transition-colors font-medium"
+                    >
+                      Belhassen Ayhem
+                      <ArrowUpRight className="w-3 h-3" />
+                    </a>
+                  </p>
+                </div>
+
+                <p className="text-xs text-muted-foreground/60">
+                  © 2026 Fabrix. All rights reserved.
+                </p>
+              </div>
             </div>
           </div>
         </footer>
