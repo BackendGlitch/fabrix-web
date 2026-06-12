@@ -39,7 +39,7 @@ const DEFAULT_ERROR_MESSAGE = 'Authentication request failed';
 const USER_ROLE_SET = new Set<UserRole>(['OWNER', 'CUSTOMER', 'ADMIN']);
 
 function getApiBaseUrl(): string {
-  const url = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+  const url = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'https://api-fabrix.backendglitch.com';
   if (!url) {
     throw new Error('Missing API URL. Set API_URL or NEXT_PUBLIC_API_URL.');
   }

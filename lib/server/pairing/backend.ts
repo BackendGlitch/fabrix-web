@@ -4,7 +4,7 @@ import { auth } from '@/auth';
 import type { OwnerAgentStatus } from '@/lib/types/agent-status';
 
 function apiBaseUrl(): string {
-  const base = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+  const base = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'https://api-fabrix.backendglitch.com';
   if (!base) {
     throw new Error('Missing API_URL or NEXT_PUBLIC_API_URL');
   }

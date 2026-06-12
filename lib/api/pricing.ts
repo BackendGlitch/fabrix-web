@@ -2,7 +2,7 @@
 
 import { getSession } from "next-auth/react";
 
-const API_BASE = process.env.NEXT_PUBLIC_CENTRAL_API_URL || "http://localhost:4000";
+const API_BASE = process.env.NEXT_PUBLIC_CENTRAL_API_URL || "https://api-fabrix.backendglitch.com";
 
 interface PrintSettings {
   infillPercent?: number;
