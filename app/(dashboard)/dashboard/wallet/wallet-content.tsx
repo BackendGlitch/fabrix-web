@@ -33,22 +33,27 @@ export default function WalletContent() {
     const intentId = searchParams.get("intent_id");
     const status = searchParams.get("status");
 
+    // If returning from NexaPay with intent_id in URL
     if (intentId) {
       if (status === "succeeded") {
-        // Try to confirm payment directly (in case webhook hasn't fired yet)
-        try {
-          toast.loading("Confirming payment...");
-          const result = await confirmPayment(intentId);
-          toast.dismiss();
-          toast.success(`Added ${result.data.amount} TND to your wallet!`);
-          await loadWallet();
-        } catch {
-          // If confirm fails, webhook may handle it - just poll
-          toast.dismiss();
-          toast.success("Payment completed! Credits will be added shortly.");
-          for (let i = 0; i < 3; i++) {
-            await new Promise(r => setTimeout(r, 2000));
+        toast.loading("Confirming payment...");
+        await new Promise(r => setTimeout(r, 2000)); // wait for webhook
+        for (let i = 0; i < 5; i++) {
+          try {
+            const result = await confirmPayment(intentId);
+            toast.dismiss();
+            toast.success(`Added ${result.data.amount} TND to your wallet!`);
             await loadWallet();
+            break;
+          } catch {
+            if (i < 4) {
+              await new Promise(r => setTimeout(r, 2000));
+              await loadWallet();
+            } else {
+              toast.dismiss();
+              toast.success("Payment completed! Credits will appear shortly.");
+              await loadWallet();
+            }
           }
         }
       } else if (status === "failed") {
@@ -56,6 +61,37 @@ export default function WalletContent() {
       }
       window.history.replaceState({}, "", "/dashboard/wallet");
       localStorage.removeItem('pending_payment_intent');
+      return;
+    }
+
+    // Check for pending payment from localStorage (user returned without redirect_url params)
+    const pendingData = localStorage.getItem('pending_payment_intent');
+    if (pendingData) {
+      try {
+        const pending = JSON.parse(pendingData);
+        const elapsed = Date.now() - pending.timestamp;
+        if (elapsed > 30_000) { // only poll if more than 30 seconds passed
+          toast.loading("Checking payment status...");
+          for (let i = 0; i < 5; i++) {
+            try {
+              const result = await confirmPayment(pending.intentId);
+              toast.dismiss();
+              toast.success(`Added ${result.data.amount} TND to your wallet!`);
+              await loadWallet();
+              localStorage.removeItem('pending_payment_intent');
+              return;
+            } catch {
+              await new Promise(r => setTimeout(r, 2000));
+              await loadWallet();
+            }
+          }
+          toast.dismiss();
+          localStorage.removeItem('pending_payment_intent');
+          await loadWallet();
+        }
+      } catch {
+        localStorage.removeItem('pending_payment_intent');
+      }
     }
   }, [searchParams, loadWallet]);
 
@@ -77,9 +113,10 @@ export default function WalletContent() {
       const intentId = result.data.intentId;
       
       if (payUrl && intentId) {
-        // Open NexaPay checkout in new tab
-        window.open(payUrl, '_blank');
-        setPendingIntent(intentId);
+        // Store intent for polling when we return
+        localStorage.setItem('pending_payment_intent', JSON.stringify({ intentId, amount: topUpAmount, timestamp: Date.now() }));
+        // Redirect to NexaPay checkout in same tab (they'll use our redirect_url to come back)
+        window.location.href = payUrl;
         
         // Start polling for payment completion
         toast.success("Checkout opened in new tab. Waiting for payment...");
