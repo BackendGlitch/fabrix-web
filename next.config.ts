@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
       expire: 300,
     },
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/central/:path*',
+        destination: 'https://api-fabrix-v2.backendglitch.com/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
